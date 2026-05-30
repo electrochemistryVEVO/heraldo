@@ -7,6 +7,9 @@ TagManager:
   - CinemachineTarget
   - Particle Manager
   - Enemy Character
+  - Enemy Routines
+  - Ally
+  - Ally Routines
   layers:
   - Default
   - TransparentFX
@@ -20,9 +23,9 @@ TagManager:
   - 
   - 
   - Enemy
-  - 
-  - 
-  - 
+  - WpnPickup
+  - Ally
+  - Detection
   - 
   - 
   - 
