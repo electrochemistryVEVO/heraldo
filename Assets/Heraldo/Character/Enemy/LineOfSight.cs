@@ -5,22 +5,22 @@ namespace Heraldo.Character.Enemy
 {
     public class LineOfSight : MonoBehaviour
     {
-        public GameObject ParentEntity;
+        //public GameObject ParentEntity;
         private void OnTriggerStay(Collider other)
         {
             //Debug.Log(other.gameObject.name);
-            ParentEntity.SendMessage("TriggerStay",other);
+            transform.parent.parent.SendMessage("TriggerStay",other);
         }
 
         private void OnTriggerExit(Collider other)
         {
-            ParentEntity.SendMessage("TriggerExit",other);
+            transform.parent.parent.SendMessage("TriggerExit",other);
         }
         
         private void OnTriggerEnter(Collider other)
         {
             
-            ParentEntity.SendMessage("TriggerEnter",other);
+            transform.parent.parent.SendMessage("TriggerEnter",other);
         }
     }
 }

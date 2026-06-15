@@ -1,9 +1,12 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Heraldo.Character.Pathfinding;
+using Heraldo.Global.Structs;
+using Heraldo.Weapon;
 using StarterAssets;
-using Unity.VisualScripting;
 using UnityEngine;
 
 namespace Heraldo.Character
@@ -20,7 +23,10 @@ namespace Heraldo.Character
     {
         public int MaxHealth = 100;
         public bool IsAlly = false;
-        public Transform RotatingObject;
+        public float RespiteTime = 2.5f;
+        public GenericWeapon currentWeapon;
+        private WeakReference<GameObject> _rotatingObject;
+        public MeshRenderer corpseMesh;
         
         private int _health;
         private StarterAssetsInputs _inputs;
@@ -29,12 +35,30 @@ namespace Heraldo.Character
         private Vector3? _aimAtPoint = null;
         private GameObject _enemyRoutines; 
         private List<WeakReference<GameObject>> _currentTargets; //Ordenado por prioridad (cual esta mas cerca)
+        private WeakReference<GameObject> _activeTarget;
+        public GameObject ActiveTarget {
+            get
+            {
+                GameObject _target;
+                bool hasTarget = _activeTarget.TryGetTarget(out _target);
+                if (hasTarget)
+                {
+                    return _target;
+                }
+                else
+                {
+                    TriggerExit(_target.GetComponent<Collider>());
+                    return null;
+                }
+            }
+        }
         
         //Children
-        public BoxCollider VisionCone;
         
         //Events
         private TaskCompletionSource<bool> _pathNodeReached;
+
+        private bool _fireTimeElapsed = true;
         //True = continue with the process, False = interrupt
 
         private int Health
@@ -55,11 +79,24 @@ namespace Heraldo.Character
             set
             {
                 _enemyState = value;
-                if(_enemyState == EnemyState.DEAD) OnDied();
+                if(_enemyState == EnemyState.DEAD) Die();
                 
             }
         }
 
+        private void Die()
+        {
+            GameObject _obj;
+            bool gotObj = _rotatingObject.TryGetTarget(out _obj);
+            if(gotObj)
+            {
+                _obj.SendMessage("QueueFree");
+            }
+            corpseMesh.enabled = true;
+            Destroy(this.GetComponent<FirstPersonController>());
+            Destroy(this.GetComponent<CharacterController>());
+            Destroy(this);
+        }
         
         private bool isObjectEnemy(GameObject obj)
         {
@@ -76,23 +113,8 @@ namespace Heraldo.Character
             _pathNodeReached = new TaskCompletionSource<bool>();
             _enemyRoutines = GameObject.FindWithTag(IsAlly ? "Ally Routines" :"Enemy Routines");
             _currentTargets = new List<WeakReference<GameObject>>();
-
-            double minDist = Double.MaxValue;
-            Transform minRoutine = null;
-            foreach(var routine in _enemyRoutines.GetComponentsInChildren<Transform>())
-            {
-                if(routine == _enemyRoutines.transform || routine.parent != _enemyRoutines.transform)continue; //Getting rid of parent or grandchildren as a possibility
-                double dist = (routine.position - transform.position).magnitude;
-                if (dist < minDist)
-                {
-                    minDist = dist;
-                    minRoutine = routine;
-                }
-            }
-
-            if (minRoutine == null) return;
-            Debug.Log(minRoutine.name);
-            FollowRoutine(minRoutine);
+            _rotatingObject = new WeakReference<GameObject>(transform.GetChild(0).gameObject);
+            FollowRoutine();
             //CalculatePath(Vector3.zero);
         }
 
@@ -121,10 +143,13 @@ namespace Heraldo.Character
             {
                 transform.LookAt(new Vector3(_aimAtPoint.Value.x,transform.position.y,_aimAtPoint.Value.z),Vector3.up);
             }
+            //Reciclaje de TriggerExit para borrar elementos que fueron borrados
+            DeallocateDead();
         }
 
         public void TriggerStay(Collider other)
         {
+            if (!this.enabled) return;
             //TODO: Check with raycast if there's nothing solid between enemy and player
             if (isObjectEnemy(other.gameObject))
             {
@@ -132,31 +157,64 @@ namespace Heraldo.Character
             }
         }
 
+        private void DeallocateDead()
+        {
+            foreach (var weakRef in _currentTargets.ToList())
+            {
+                GameObject _target;
+                bool hasTarget = weakRef.TryGetTarget(out _target);
+                if (!hasTarget || _target ==null)
+                {
+                    Debug.Log("Target erased");
+                    _currentTargets.Remove(weakRef);
+                } 
+            }
+            
+            if (_currentTargets.Count <= 0 && Enemy_State == EnemyState.ENGAGE)
+            {
+                Debug.Log("Does this ever get fired");
+                Enemy_State = EnemyState.HUNT;
+                SearchForPlayer();
+            }
+            else
+            {
+                //Debug.Log("Numero de objetivos: "+_currentTargets.Count);
+            }
+            //SearchForPlayer(other.gameObject);
+        }
+
         public void TriggerExit(Collider other)
         {
+            if (!this.enabled) return;
             //var bufTargets = new List<WeakReference<GameObject>>(_currentTargets);
-            if (isObjectEnemy(other.gameObject))
+            lock (_currentTargets)
             {
-                foreach (var weakRef in _currentTargets)
+                if (isObjectEnemy(other.gameObject))
                 {
-                    GameObject _target;
-                    bool hasTarget = weakRef.TryGetTarget(out _target);
-                    if (hasTarget)
+                    foreach (var weakRef in _currentTargets.ToList())
                     {
-                        if (_target == other.gameObject)
-                        { 
-                            _currentTargets.Remove(weakRef);
-                            break;
+                        GameObject _target;
+                        bool hasTarget = weakRef.TryGetTarget(out _target);
+                        if (hasTarget && _target!=null)
+                        {
+                            if (_target == other.gameObject)
+                            {
+                                _currentTargets.Remove(weakRef);
+                                break;
+                            }
                         }
+                        else _currentTargets.Remove(weakRef);
                     }
+
+                    //if (_currentTargets.Count <= 0)
+                    //SearchForPlayer(other.transform.position);
                 }
-                if(_currentTargets.Count<=0)
-                    SearchForPlayer(other.gameObject);
             }
         }
         
         public void TriggerEnter(Collider other)
         {
+            if (!this.enabled) return;
             //Debug.Log(other.name);
             if (isObjectEnemy(other.gameObject))
             {
@@ -165,10 +223,24 @@ namespace Heraldo.Character
             }
         }
 
-        async Task FollowRoutine(Transform routine)
+        async Task FollowRoutine()
         {
-            
-            Transform[] steps = routine.gameObject.GetComponentsInChildren<Transform>();
+            double minDist = Double.MaxValue;
+            Transform minRoutine = null;
+            foreach(var routine in _enemyRoutines.GetComponentsInChildren<Transform>())
+            {
+                if(routine == _enemyRoutines.transform || routine.parent != _enemyRoutines.transform)continue; //Getting rid of parent or grandchildren as a possibility
+                double dist = (routine.position - transform.position).magnitude;
+                if (dist < minDist)
+                {
+                    minDist = dist;
+                    minRoutine = routine;
+                }
+            }
+
+            if (minRoutine == null) return;
+            Debug.Log(minRoutine.name);
+            Transform[] steps = minRoutine.gameObject.GetComponentsInChildren<Transform>();
             if (steps.Length == 0) return;
             Debug.Log(steps.Length);
             int i = 0;
@@ -204,8 +276,8 @@ namespace Heraldo.Character
                 Debug.Log("Siguiente objetivo: (" + path.pos_x + ";" + path.pos_y + ")");
                 _walkToPoint = new Vector2(path.realPos.x, path.realPos.z);
                 _aimAtPoint = _walkToPoint;
-                GameObject point = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                point.transform.position = new Vector3(_walkToPoint.Value.x,transform.position.y,_walkToPoint.Value.y);
+                //GameObject point = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                //point.transform.position = new Vector3(_walkToPoint.Value.x,transform.position.y,_walkToPoint.Value.y);
                 bool reached = await _pathNodeReached.Task;
                 _pathNodeReached = new TaskCompletionSource<bool>();
                 Debug.Log(reached);
@@ -223,56 +295,69 @@ namespace Heraldo.Character
             _walkToPoint = null;
             //TODO: Fire at player
             //Check if this enemy is the closest
-            foreach (var weakRef in _currentTargets)
+            foreach (var weakRef in _currentTargets.ToList())
             {
                 GameObject closestEnemy;
                 bool hasClosestEnemy = weakRef.TryGetTarget(out closestEnemy);
-                if (hasClosestEnemy)
+                if (hasClosestEnemy && closestEnemy != null)
                 {
                     if (closestEnemy == player) continue;
                     if ((transform.position - closestEnemy.transform.position).magnitude
                         < (transform.position - player.transform.position).magnitude)
                         return;
-                }
-            }
+                } 
+                else _currentTargets.Remove(weakRef);
+            } 
             Enemy_State = EnemyState.ENGAGE;
             _aimAtPoint = player.transform.position;
+            if(_fireTimeElapsed)StartCoroutine(AttackEnemy(player.transform.position));
         }
 
-        private async Task SearchForPlayer(GameObject player)
+        private async Task SearchForPlayer()
         {
             Debug.Log("Searching for player");
             //Interrumpir
-            _pathNodeReached.TrySetResult(false);
+            if(Enemy_State != EnemyState.HUNT)_pathNodeReached.TrySetResult(false);
             _walkToPoint = null;
             //Trace path to last known position of player
             if(_aimAtPoint!=null)
             {
                 Enemy_State = EnemyState.HUNT;
                 _pathNodeReached = new TaskCompletionSource<bool>();
-                await CalculatePath(player.transform.position); 
+                await CalculatePath(_aimAtPoint.Value); 
             } 
             Debug.Log("Player lost");
             Enemy_State = EnemyState.PATROL;
+            
         }
 
-        public void OnTakeDamage(int damage)
+        IEnumerator AttackEnemy(Vector3 enemyPos)
+        {
+            Debug.Log("Fired");
+            _fireTimeElapsed = false;
+            currentWeapon.Fire(transform.position,enemyPos - transform.position); 
+            yield return new WaitForSeconds(RespiteTime);
+            _fireTimeElapsed = true;
+        }
+
+        public void OnTakeDamage(DamageInfo damage)
         {
             if (_enemyState != EnemyState.DEAD)
             {
-                Health = Math.Max(Health-damage,0);
+                Health = Math.Max(Health-damage.damage,0);
                 Debug.Log("Health: " + Health);
+                //Search for the one who shot me
+                if (damage.enemyPos is not null)
+                {
+                    _aimAtPoint = damage.enemyPos;
+                    SearchForPlayer();
+                }
             }
         }
 
         void WalkToPoint(Vector2 point)
         {
             _walkToPoint = point; 
-        }
-
-        void OnDied()
-        {
-            Debug.Log("Dead");
         }
     }
 }

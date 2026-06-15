@@ -10,6 +10,7 @@ TagManager:
   - Enemy Routines
   - Ally
   - Ally Routines
+  - UI Canvas
   layers:
   - Default
   - TransparentFX
@@ -17,7 +18,7 @@ TagManager:
   - 
   - Water
   - UI
-  - 
+  - Camera_SunOverlay
   - 
   - 
   - 

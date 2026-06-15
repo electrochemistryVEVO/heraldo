@@ -159,6 +159,7 @@ namespace Heraldo.Character.Pathfinding
             Vector2Int _goal = new Vector2Int((int)Math.Round(roundedGoal.x / MapRatio.x), (int)Math.Round(roundedGoal.z / MapRatio.y));
             Debug.Log("Pos: ("+_pos.x+";"+_pos.y+")");
             Debug.Log("Goal: ("+_goal.x+";"+_goal.y+")");
+            if (_pos == _goal) return null;
             Path path = ComputePath(MapCellNum.x*MapCellNum.y, 0, _pos, _goal);
             return path;
         }
