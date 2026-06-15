@@ -12,17 +12,37 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2517149060062456832, guid: 2a6a91d74d4e1f028a595281cba837d5, type: 3}
+      propertyPath: m_Layer
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2760611443715982455, guid: 2a6a91d74d4e1f028a595281cba837d5, type: 3}
+      propertyPath: hittableLayers.m_Bits
+      value: 2048
+      objectReference: {fileID: 0}
     - target: {fileID: 3316356414943621618, guid: 2a6a91d74d4e1f028a595281cba837d5, type: 3}
       propertyPath: m_Name
       value: Ally
       objectReference: {fileID: 0}
     - target: {fileID: 3316356414943621618, guid: 2a6a91d74d4e1f028a595281cba837d5, type: 3}
+      propertyPath: m_Layer
+      value: 13
+      objectReference: {fileID: 0}
+    - target: {fileID: 3316356414943621618, guid: 2a6a91d74d4e1f028a595281cba837d5, type: 3}
       propertyPath: m_TagString
-      value: Ally
+      value: Untagged
       objectReference: {fileID: 0}
     - target: {fileID: 5091107231566671745, guid: 2a6a91d74d4e1f028a595281cba837d5, type: 3}
       propertyPath: IsAlly
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6312608600611663304, guid: 2a6a91d74d4e1f028a595281cba837d5, type: 3}
+      propertyPath: m_Layer
+      value: 13
+      objectReference: {fileID: 0}
+    - target: {fileID: 6312608600611663304, guid: 2a6a91d74d4e1f028a595281cba837d5, type: 3}
+      propertyPath: m_TagString
+      value: Ally
       objectReference: {fileID: 0}
     - target: {fileID: 6527429721397917713, guid: 2a6a91d74d4e1f028a595281cba837d5, type: 3}
       propertyPath: m_LocalPosition.x

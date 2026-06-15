@@ -25,10 +25,8 @@ namespace Heraldo.Weapon
             StartCoroutine(DestroyParticle(obj));
         }
 
-        public void FleshImpact(Vector3 target, Vector3 normal,GameObject hitObject)
+        public void FleshImpact(Vector3 target, Vector3 normal)
         {
-            //Taking damage
-            hitObject.SendMessage("OnTakeDamage",20,SendMessageOptions.DontRequireReceiver);
             //VFX
             var obj = Instantiate(bulletFleshPrefab, 
                 target, 

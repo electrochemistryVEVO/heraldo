@@ -1,8 +1,11 @@
 using System;
+using Heraldo.Flavor;
+using Heraldo.UI;
 using Heraldo.Weapon;
 using Heraldo.Weapon.Holster;
 using StarterAssets;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Heraldo.Character
 {
@@ -14,7 +17,7 @@ namespace Heraldo.Character
         public float InteractRadius;
         public GameObject Weapon;
         private GenericWeapon _currentWeapon;
-        private GenericWpnHolster _arsenal;
+        GenericWpnHolster _arsenal;
         private WeakReference<GameObject> _nearestInteractableRef;
         
         //Components within the instance
@@ -31,8 +34,15 @@ namespace Heraldo.Character
         private LayerMask _wpnPickupMask;
         private LayerMask _enemyMask;
         
+        //UI
+        private LevelUIManager _uiCanvas;
+        
         //Debounces
         private bool _shoot_deb = false;
+        
+        //Input
+        private PlayerInput _playerInput;
+        private bool _playerInputEnabled = true;
 
         private void Start()
         {
@@ -46,11 +56,21 @@ namespace Heraldo.Character
             _impact = GameObject.FindWithTag("Particle Manager").GetComponent<BulletImpact>();
             _wpnPickupMask = LayerMask.GetMask("WpnPickup");
             _nearestInteractableRef = new WeakReference<GameObject>(null);
+            _uiCanvas = GameObject.FindWithTag("UI Canvas").GetComponent<LevelUIManager>();
+            _playerInput = GetComponent<PlayerInput>();
             //_currentWeapon = Weapon.GetComponent<GenericWeapon>();
+        }
+
+        public void TriggerPlayerInput(bool value)
+        {
+            _playerInputEnabled = value;
         }
         
         private void Update()
         {
+            //Desactivar o activar player input cuando sea posible
+            _playerInput.enabled = _playerInputEnabled;
+            
             bool isCrouched = _inputs.crouch;
             //Modificar valocidad de caminata
             _controller.MoveSpeed = (isCrouched && _controller.Grounded) ? CrouchSpeed : _move_speed;
@@ -61,6 +81,8 @@ namespace Heraldo.Character
                 );
             //Calcular arma mas cercana
             CalculateNearestInteractable();
+            //Modificar el crosshair
+            AdjustCrosshair();
             //Equipar armas
             if (_inputs.pickup)
             {
@@ -108,14 +130,32 @@ namespace Heraldo.Character
         {
             GameObject obj;
             bool hasTarget = _nearestInteractableRef.TryGetTarget(out obj);
-            if (hasTarget)
+            if (hasTarget && obj!=null)
             {
                 //Debug.Log("Picked up " + obj.name);
-                var wpn = obj.GetComponent<WpnPickup>();
-                _arsenal.PickupWeapon(wpn.AmmoCount,wpn.WeaponIndex);
+                var wpn = obj.GetComponent<Interactable>();
+                if (wpn is WpnPickup)
+                {
+                    var _wpn = (WpnPickup)wpn;
+                    _arsenal.PickupWeapon(_wpn.AmmoCount,_wpn.WeaponIndex);
+                }
+                else
+                {
+                    wpn.Interact(this);
+                }
                 Destroy(obj);
                 //TODO: Automatically change to correct weapon index
             }
+        }
+
+        private void AdjustCrosshair()
+        {
+            string[] mask = new[] { "Ally", "Enemy" };
+            RaycastHit hit;
+            bool wasHit = Physics.Raycast(_camera.position, 
+                _camera.TransformDirection(Vector3.forward),
+                out hit,Mathf.Infinity, LayerMask.GetMask(mask));
+            _uiCanvas.OnSubjectChange(wasHit ? hit.collider.gameObject : null,!wasHit);
         }
         
         //Logica de armas

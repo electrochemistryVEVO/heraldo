@@ -1,3 +1,4 @@
+using Heraldo.Global.Structs;
 using StarterAssets;
 using UnityEngine;
 
@@ -5,8 +6,9 @@ namespace Heraldo.Weapon
 {
     public class WeaponRifle : GenericWeapon
     {
+        public LayerMask hittableLayers;
         private BulletImpact _impact;
-
+        
         void Start()
         {
             _impact = GameObject.FindWithTag("Particle Manager").GetComponent<BulletImpact>();
@@ -14,12 +16,18 @@ namespace Heraldo.Weapon
         protected override void FireAt(Vector3 position,Vector3 direction)
         {
             RaycastHit hit;
-            bool wasHit = Physics.Raycast(position,direction, out hit,Mathf.Infinity);
+            bool wasHit = Physics.Raycast(position,direction, out hit,Mathf.Infinity,LayerMask.GetMask("Ally","Enemy","Default"));
             if (wasHit)
             {
-                if (hit.transform.gameObject.layer == LayerMask.NameToLayer("Enemy"))
+                if ((hittableLayers & (1 << hit.transform.gameObject.layer))!=0)
                 {
-                    _impact.FleshImpact(hit.point,hit.normal,hit.transform.gameObject);
+                    Debug.Log(hit.collider.name);
+                    //Taking damage
+                    hit.transform.gameObject.SendMessage("OnTakeDamage", 
+                        new DamageInfo(20,hit.point),
+                        SendMessageOptions.DontRequireReceiver);
+                    //Impact VFX
+                    _impact.FleshImpact(hit.point,hit.normal);
                 }
                 else  _impact.Impact(hit.point, hit.normal);
             }
