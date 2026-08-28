@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using Heraldo.Flavor;
 using Heraldo.UI;
 using Heraldo.Weapon;
@@ -13,6 +14,8 @@ namespace Heraldo.Character
     {
         public float CrouchSpeed = 1.0f;
         public float CrouchGroundOffset;
+        public float ProneSpeed = 0.5f;
+        public float ProneGroundOffset;
         public float GroundOffset;
         public float InteractRadius;
         public GameObject Weapon;
@@ -40,9 +43,18 @@ namespace Heraldo.Character
         //Debounces
         private bool _shoot_deb = false;
         
+        //Physics
+        private Vector3 _prevPos;
+        
         //Input
         private PlayerInput _playerInput;
         private bool _playerInputEnabled = true;
+
+        private float SpreadMultiplier()
+        {
+            Vector3 velocity = (transform.position - _prevPos) / Time.deltaTime;
+            return velocity.magnitude / _controller.SprintSpeed;
+        }
 
         private void Start()
         {
@@ -58,6 +70,7 @@ namespace Heraldo.Character
             _nearestInteractableRef = new WeakReference<GameObject>(null);
             _uiCanvas = GameObject.FindWithTag("UI Canvas").GetComponent<LevelUIManager>();
             _playerInput = GetComponent<PlayerInput>();
+            _prevPos = transform.position;
             //_currentWeapon = Weapon.GetComponent<GenericWeapon>();
         }
 
@@ -68,6 +81,11 @@ namespace Heraldo.Character
         
         private void Update()
         {
+            //Ajustar crosshair
+            float spreadMultiplier = SpreadMultiplier();
+            _uiCanvas.SetCrosshairSpread(spreadMultiplier);
+            _prevPos = transform.position;
+            
             //Desactivar o activar player input cuando sea posible
             _playerInput.enabled = _playerInputEnabled;
             
@@ -92,8 +110,15 @@ namespace Heraldo.Character
             //Disparar si se puede
             if (_inputs.shoot && !_shoot_deb)
             {
+                //TODO: Erase _shoot_deb, there's already a cooldown system
                 _shoot_deb = true;
-                _currentWeapon?.Fire(_camera.position,_camera.TransformDirection(Vector3.forward));
+                if (_currentWeapon !=null)
+                {
+                    StartCoroutine(WeaponCooldown(_currentWeapon.ReloadTime));
+                    _currentWeapon.Fire(_camera.position,_camera.TransformDirection(Vector3.forward),spreadMultiplier);
+                    _uiCanvas.AmmoText(_currentWeapon.AmmoCount.ToString()); 
+                }
+                
                 //Debug.Log("Shot!");
             }
             else
@@ -162,12 +187,24 @@ namespace Heraldo.Character
         public void EraseWeapon()
         {
             _currentWeapon = null;
+            _uiCanvas.ShowHideAmmoText();
             //Destroy(Weapon);
+        }
+
+        private IEnumerator WeaponCooldown(float seconds)
+        {
+            _inputs.ModifyInputs(new string[]{"shoot","holster","pickup","select_weapon"},false);
+            _uiCanvas.ToggleAmmoLoad(true);
+            yield return new WaitForSeconds(seconds);
+            _inputs.ModifyInputs(new string[]{"shoot","holster","pickup","select_weapon"},true);
+            _uiCanvas.ToggleAmmoLoad(false);
         }
 
         public void EquipWeapon(GenericWeapon weapon)
         {
             _currentWeapon = weapon;
+            _uiCanvas.AmmoText(weapon.AmmoCount.ToString());
+            _uiCanvas.ShowHideAmmoText(true);
         }
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using Heraldo.Character;
 using Heraldo.Character.Pathfinding;
+using Heraldo.UI;
 using UnityEngine;
 
 namespace Heraldo.Weapon.Holster
@@ -28,6 +29,7 @@ namespace Heraldo.Weapon.Holster
         private int _last_wpn_index = 0;
         private bool _nullWpn = false;
         private FPSController _character;
+         
         
         //Debounce values
         private bool _holsterDeb = false;
@@ -36,7 +38,7 @@ namespace Heraldo.Weapon.Holster
         {
             _inputs = GetComponentInParent<Inputs>();
             _character = GetComponentInParent<FPSController>();
-            _weapons = GetComponentsInChildren<GenericWeapon>();
+            _weapons = GetComponentsInChildren<GenericWeapon>(); 
             //Debug.Log(_weapons.Length);
             //_holsters = new Holster[3];
         }
@@ -70,13 +72,14 @@ namespace Heraldo.Weapon.Holster
         void Hold()
         {
             //Debug.Log("Weapon holstered: "+_last_wpn_index);
-            _character.EraseWeapon();
+            _character.EraseWeapon(); 
         }
 
         void Draw()
         {
             //Debug.Log("Weapon drawn: "+_last_wpn_index);
             _character.EquipWeapon(_weapons[_last_wpn_index]);
+           
         }
     }
 }

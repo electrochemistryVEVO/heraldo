@@ -7,6 +7,9 @@ namespace Heraldo.VFX.Lighting
     {
         public Material cubemapMaterial;
         public Material sunMaterial;
+        public string hora;
+        
+        
         private void Awake()
         {
             cubemapMaterial = RenderSettings.skybox;

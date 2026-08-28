@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -14,40 +15,68 @@ namespace Heraldo.Character
         public bool holster;
         public bool pickup;
         public int selectedWeapon;
+        
+        private Dictionary<string, bool> enabledInputMap = new Dictionary<string, bool>()
+        {
+            {"crouch",true},
+            {"shoot",true},
+            {"holster",true},
+            {"pickup",true},
+            {"select_weapon",true}
+        };
+
+        public void ModifyInputs(string[] inputs,bool value)
+        {
+            foreach (var key in inputs)
+            {
+                enabledInputMap[key] = value;
+            }
+        }
 #if ENABLE_INPUT_SYSTEM
         public void OnCrouch(InputValue value)
         {
-            Debug.Log("Crouch");
-            CrouchInput(value.isPressed);
+            bool enabled;
+            enabledInputMap.TryGetValue("crouch", out enabled);
+            if(enabled)CrouchInput(value.isPressed);
         }
 
         public void OnShoot(InputValue value)
         {
-            ShootInput(value.isPressed);
+            bool enabled;
+            enabledInputMap.TryGetValue("shoot", out enabled);
+            if(enabled)ShootInput(value.isPressed);
         }
 
         public void OnDrawHolster(InputValue value)
         {
-            SwitchHolster();
+            bool enabled;
+            enabledInputMap.TryGetValue("holster", out enabled);
+            if(enabled)SwitchHolster();
         }
 
         public void OnWpnSelect1(InputValue value)
         {
-            if (!value.isPressed)
+            bool enabled;
+            enabledInputMap.TryGetValue("select_weapon", out enabled);
+            if (!value.isPressed && enabled)
             {
                 SelectWeapon(1);
             }
         }
         public void OnWpnSelect2(InputValue value)
         {
-            if (!value.isPressed)
+            bool enabled;
+            enabledInputMap.TryGetValue("select_weapon", out enabled);
+            if (!value.isPressed && enabled)
             {
                 SelectWeapon(2);
             }
         }
         public void OnWpnSelect3(InputValue value)
         {
-            if (!value.isPressed)
+            bool enabled;
+            enabledInputMap.TryGetValue("select_weapon", out enabled);
+            if (!value.isPressed && enabled)
             {
                 SelectWeapon(3);
             }

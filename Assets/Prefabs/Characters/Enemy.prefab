@@ -258,7 +258,6 @@ GameObject:
   - component: {fileID: 9135636221505574903}
   - component: {fileID: 4805209966865955154}
   - component: {fileID: 5091107231566671745}
-  - component: {fileID: 2066410470253398833}
   m_Layer: 11
   m_Name: Enemy
   m_TagString: Untagged
@@ -429,25 +428,10 @@ MonoBehaviour:
   MaxHealth: 100
   IsAlly: 0
   RespiteTime: 2.5
+  TurningSpeed: 0.5
+  Troop: {fileID: 0}
   currentWeapon: {fileID: 2760611443715982455}
   corpseMesh: {fileID: 5714443089648118619}
---- !u!114 &2066410470253398833
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3316356414943621618}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 14efaf0a0e6a4d219232f4df2fab3974, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Heraldo.Character.Pathfinding.AStarGrid
-  WorldMapMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  MapSize: {x: 4000, y: 4000, z: 999}
-  MapCellNum: {x: 400, y: 400}
 --- !u!1 &5049888828123240531
 GameObject:
   m_ObjectHideFlags: 0
@@ -585,6 +569,7 @@ MonoBehaviour:
   Range: 500
   MaxAmmo: 30
   AmmoCount: 30
+  MaxMinRecoil: {x: 0, y: 0}
   Enabled: 1
   hittableLayers:
     serializedVersion: 2

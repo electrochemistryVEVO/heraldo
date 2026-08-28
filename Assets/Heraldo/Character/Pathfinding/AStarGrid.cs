@@ -146,6 +146,11 @@ namespace Heraldo.Character.Pathfinding
             return currentPath;
         }
 
+        void Awake()
+        {
+            GetDistances();
+        }
+
         public async Task<Path> GetPath(Vector3 pos, Vector3 goal)
         {
             if(_paths==null)GetDistances(); //Primer chequeo

@@ -11,19 +11,26 @@ using UnityEngine;
 
 namespace Heraldo.Character
 {
-    enum EnemyState
+    public enum EnemyState
     {
         ALIVE,
         PATROL,
         HUNT,
         ENGAGE,
+        SEEK,
+        SEEK_GUARD,
         DEAD
     }
+    
+    //TODO: VERY IMPORTANT! MAKE ASTAR MAP A NAVMESH AND A SINGLETON
+
     public class EnemyController : MonoBehaviour
     {
         public int MaxHealth = 100;
         public bool IsAlly = false;
         public float RespiteTime = 2.5f;
+        public float TurningSpeed = 0.5f;
+        public TroopController Troop;
         public GenericWeapon currentWeapon;
         private WeakReference<GameObject> _rotatingObject;
         public MeshRenderer corpseMesh;
@@ -73,7 +80,7 @@ namespace Heraldo.Character
 
         private EnemyState _enemyState;
 
-        private EnemyState Enemy_State
+        public EnemyState Enemy_State
         {
             get => _enemyState;
             set
@@ -97,6 +104,24 @@ namespace Heraldo.Character
             Destroy(this.GetComponent<CharacterController>());
             Destroy(this);
         }
+
+        IEnumerator ScanForEnemies()
+        {
+            Vector3 toYourLeft = transform.TransformPoint(new Vector3(0.5f, 0, -0.5f));
+            Vector3 toYourRight = transform.TransformPoint(new Vector3(0.5f, 0, -0.5f));
+            _aimAtPoint = toYourLeft;
+            yield return new WaitForSeconds(3);
+            _aimAtPoint = toYourRight;
+            yield return new WaitForSeconds(3);
+            _aimAtPoint = null;
+            if (Enemy_State == EnemyState.SEEK)
+            {
+                Enemy_State = EnemyState.PATROL;
+                FollowRoutine();
+            }
+            else ScanForEnemies();
+            //TODO: Add interruption when player is spotted
+        }
         
         private bool isObjectEnemy(GameObject obj)
         {
@@ -109,7 +134,7 @@ namespace Heraldo.Character
             Enemy_State = EnemyState.ALIVE;
             _inputs = GetComponent<StarterAssetsInputs>();
             _walkToPoint = Vector2.zero;
-            _aStarGrid = GetComponent<AStarGrid>();
+            _aStarGrid = GameObject.FindWithTag("AStarGrid").GetComponent<AStarGrid>();
             _pathNodeReached = new TaskCompletionSource<bool>();
             _enemyRoutines = GameObject.FindWithTag(IsAlly ? "Ally Routines" :"Enemy Routines");
             _currentTargets = new List<WeakReference<GameObject>>();
@@ -138,10 +163,13 @@ namespace Heraldo.Character
                 }
             }
             else _inputs.move = Vector2.zero;
-            //Apuntar a puntos
+            //Apuntar a puntos 
             if (_aimAtPoint != null)
             {
-                transform.LookAt(new Vector3(_aimAtPoint.Value.x,transform.position.y,_aimAtPoint.Value.z),Vector3.up);
+                Vector3 nextLookAt = new Vector3(_aimAtPoint.Value.x, transform.position.y, _aimAtPoint.Value.z);
+                Vector3 currentLookAt = transform.TransformPoint(Vector3.forward) * nextLookAt.magnitude;
+                transform.LookAt(Vector3.Lerp(currentLookAt,nextLookAt,TurningSpeed),
+                    Vector3.up);
             }
             //Reciclaje de TriggerExit para borrar elementos que fueron borrados
             DeallocateDead();

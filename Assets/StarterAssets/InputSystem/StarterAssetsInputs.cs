@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -45,6 +46,13 @@ namespace StarterAssets
 		}
 #endif
 
+		public void InputDisable(string[] inputs)
+		{
+			foreach (var input in inputs)
+			{
+				
+			}
+		}
 
 		public void MoveInput(Vector2 newMoveDirection)
 		{
