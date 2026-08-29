@@ -22,7 +22,6 @@ namespace Heraldo.Character
         DEAD
     }
     
-    //TODO: VERY IMPORTANT! MAKE ASTAR MAP A NAVMESH AND A SINGLETON
 
     public class EnemyController : MonoBehaviour
     {
