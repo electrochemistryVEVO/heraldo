@@ -7,6 +7,8 @@ using Heraldo.Weapon.Holster;
 using StarterAssets;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Playables;
+using UnityEngine.Timeline;
 
 namespace Heraldo.Character
 {
@@ -18,6 +20,7 @@ namespace Heraldo.Character
         public float ProneGroundOffset;
         public float GroundOffset;
         public float InteractRadius;
+        public Transform HumanoidLeftGrip;
         public GameObject Weapon;
         private GenericWeapon _currentWeapon;
         GenericWpnHolster _arsenal;
@@ -29,9 +32,12 @@ namespace Heraldo.Character
         private CharacterController characterController;
         private FirstPersonController _controller;
         private Transform _camera;
+        public Transform FpsArms;
+        private Vector3 _deltaPosFpsArms;
         
         //Global game objects referenced
         private BulletImpact _impact;
+        private PlayableDirector _playableFpsShoot;
         
         //Layer masks
         private LayerMask _wpnPickupMask;
@@ -71,6 +77,8 @@ namespace Heraldo.Character
             _uiCanvas = GameObject.FindWithTag("UI Canvas").GetComponent<LevelUIManager>();
             _playerInput = GetComponent<PlayerInput>();
             _prevPos = transform.position;
+            _playableFpsShoot = GameObject.FindWithTag("MainCamera").GetComponent<PlayableDirector>();
+            _deltaPosFpsArms = _controller.CinemachineCameraTarget.transform.position - FpsArms.position;
             //_currentWeapon = Weapon.GetComponent<GenericWeapon>();
         }
 
@@ -81,6 +89,10 @@ namespace Heraldo.Character
         
         private void Update()
         {
+            //Ajustar brazotes fps
+            //FpsArms.position = _controller.CinemachineCameraTarget.transform.position - _deltaPosFpsArms;
+            //FpsArms.rotation = _controller.CinemachineCameraTarget.transform.rotation;
+            
             //Ajustar crosshair
             float spreadMultiplier = SpreadMultiplier();
             _uiCanvas.SetCrosshairSpread(spreadMultiplier);
@@ -116,6 +128,7 @@ namespace Heraldo.Character
                 {
                     StartCoroutine(WeaponCooldown(_currentWeapon.ReloadTime));
                     _currentWeapon.Fire(_camera.position,_camera.TransformDirection(Vector3.forward),spreadMultiplier);
+                    _playableFpsShoot.Play();
                     _uiCanvas.AmmoText(_currentWeapon.AmmoCount.ToString()); 
                 }
                 
@@ -186,6 +199,7 @@ namespace Heraldo.Character
         //Logica de armas
         public void EraseWeapon()
         {
+            _currentWeapon.ShowHide(false);
             _currentWeapon = null;
             _uiCanvas.ShowHideAmmoText();
             //Destroy(Weapon);
@@ -203,6 +217,8 @@ namespace Heraldo.Character
         public void EquipWeapon(GenericWeapon weapon)
         {
             _currentWeapon = weapon;
+            weapon.ShowHide();
+            weapon.ViewModel.transform.SetParent(HumanoidLeftGrip);
             _uiCanvas.AmmoText(weapon.AmmoCount.ToString());
             _uiCanvas.ShowHideAmmoText(true);
         }
