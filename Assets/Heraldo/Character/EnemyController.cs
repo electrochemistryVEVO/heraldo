@@ -31,6 +31,7 @@ namespace Heraldo.Character
         public float TurningSpeed = 0.5f;
         public TroopController Troop;
         public GenericWeapon currentWeapon;
+        public Transform RotatingTransform;
         private WeakReference<GameObject> _rotatingObject;
         public MeshRenderer corpseMesh;
         
@@ -122,7 +123,7 @@ namespace Heraldo.Character
             //TODO: Add interruption when player is spotted
         }
         
-        private bool isObjectEnemy(GameObject obj)
+        public bool isObjectEnemy(GameObject obj)
         {
             return IsAlly ? obj.CompareTag("Enemy Character") : (obj.CompareTag("Player") || obj.CompareTag("Ally"));
         }
@@ -137,7 +138,7 @@ namespace Heraldo.Character
             _pathNodeReached = new TaskCompletionSource<bool>();
             _enemyRoutines = GameObject.FindWithTag(IsAlly ? "Ally Routines" :"Enemy Routines");
             _currentTargets = new List<WeakReference<GameObject>>();
-            _rotatingObject = new WeakReference<GameObject>(transform.GetChild(0).gameObject);
+            _rotatingObject = new WeakReference<GameObject>(RotatingTransform.gameObject);
             FollowRoutine();
             //CalculatePath(Vector3.zero);
         }
@@ -166,8 +167,9 @@ namespace Heraldo.Character
             if (_aimAtPoint != null)
             {
                 Vector3 nextLookAt = new Vector3(_aimAtPoint.Value.x, transform.position.y, _aimAtPoint.Value.z);
-                Vector3 currentLookAt = transform.TransformPoint(Vector3.forward) * nextLookAt.magnitude;
-                transform.LookAt(Vector3.Lerp(currentLookAt,nextLookAt,TurningSpeed),
+                //Vector3 currentLookAt = transform.TransformPoint(Vector3.forward) * nextLookAt.magnitude;
+                transform.LookAt(//Vector3.Lerp(currentLookAt,nextLookAt,TurningSpeed),
+                    nextLookAt,
                     Vector3.up);
             }
             //Reciclaje de TriggerExit para borrar elementos que fueron borrados
@@ -177,11 +179,11 @@ namespace Heraldo.Character
         public void TriggerStay(Collider other)
         {
             if (!this.enabled) return;
-            //TODO: Check with raycast if there's nothing solid between enemy and player
-            if (isObjectEnemy(other.gameObject))
+            if (isObjectEnemy(other.gameObject) && CheckIfInLOS(other))
             {
                 SpotPlayer(other.gameObject);
             }
+            else TriggerExit(other); //Debe de haber una manera mas efectiva de hacer esto
         }
 
         private void DeallocateDead()
@@ -191,8 +193,7 @@ namespace Heraldo.Character
                 GameObject _target;
                 bool hasTarget = weakRef.TryGetTarget(out _target);
                 if (!hasTarget || _target ==null)
-                {
-                    Debug.Log("Target erased");
+                { 
                     _currentTargets.Remove(weakRef);
                 } 
             }
@@ -248,6 +249,15 @@ namespace Heraldo.Character
                 Debug.Log("Enemy spotted: "+other.gameObject.name);
                 _currentTargets.Add(new WeakReference<GameObject>(other.gameObject));
             }
+        }
+        
+        private bool CheckIfInLOS(Collider other)
+        {
+            Vector3 pos = transform.position;
+            Vector3 dist = other.gameObject.transform.position - pos;
+            RaycastHit hit;
+            bool wasHit = Physics.Raycast(pos,dist.normalized, out hit,dist.magnitude,LayerMask.GetMask("Default"));
+            return !wasHit || hit.collider.gameObject == other.gameObject;
         }
 
         async Task FollowRoutine()
@@ -314,13 +324,12 @@ namespace Heraldo.Character
             }
         }
 
-        private void SpotPlayer(GameObject player)
-        {
+        public void SpotPlayer(GameObject player)
+        { 
             //Interrumpir
             //Debug.Log("Player spotted");
             _pathNodeReached.TrySetResult(false);
             _walkToPoint = null;
-            //TODO: Fire at player
             //Check if this enemy is the closest
             foreach (var weakRef in _currentTargets.ToList())
             {
@@ -379,6 +388,14 @@ namespace Heraldo.Character
                     _aimAtPoint = damage.enemyPos;
                     SearchForPlayer();
                 }
+            }
+        }
+
+        public void BeAlerted(Vector3 position)
+        {
+            if (_enemyState != EnemyState.ENGAGE)
+            {
+                OnTakeDamage(new DamageInfo(0,position));
             }
         }
 

@@ -1,11 +1,13 @@
 using System;
+using Heraldo.Character.Enemy;
+using Heraldo.Global.Enums;
 using StarterAssets;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
 namespace Heraldo.Weapon
 {
-    public class GenericWeapon : MonoBehaviour
+    public abstract class GenericWeapon : MonoBehaviour
     {
         
         [Header("Game Logic")]
@@ -15,18 +17,22 @@ namespace Heraldo.Weapon
         public int AmmoCount;
         public Vector2 MaxMinRecoil;
         public bool Enabled;
+        public abstract TimelineID ShootTimelineId();
+        protected NPCHearingManager _hearingManager;
         
         [Header("Visual Weapon")]
         public GameObject ViewModel;
+        
 
         private Renderer[] _viewModelRenderers;
 
         private bool _isMelee = false;
 
-        private void Awake()
+        public void Awake()
         {
             if (MaxAmmo < 0 || AmmoCount < 0) _isMelee = true;
             _viewModelRenderers = ViewModel.GetComponentsInChildren<Renderer>();
+            _hearingManager = GameObject.FindWithTag("NPCSensesManager").GetComponent<NPCHearingManager>();
         }
 
         private Vector3 Spread(Vector3 direction, float spreadMultiplier)
@@ -42,7 +48,7 @@ namespace Heraldo.Weapon
         {
             if (!Enabled) return;
             Debug.Log("Ammo: " + AmmoCount);
-            if(_isMelee)AmmoCount = Math.Max(AmmoCount-1,0); 
+            if(!_isMelee)AmmoCount = Math.Max(AmmoCount-1,0); 
             if(AmmoCount>0 || _isMelee) FireAt(position, direction + Spread(direction, spreadMultiplier));
         }
 
@@ -53,7 +59,7 @@ namespace Heraldo.Weapon
                 renderer.enabled = show;
             }
             //_viewModelRenderer.enabled = show;
-            if(!show)ViewModel.transform.SetParent(transform);
+            //if(!show)ViewModel.transform.SetParent(transform);
         }
         protected virtual void FireAt(Vector3 position,Vector3 direction){}
     }

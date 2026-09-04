@@ -78,7 +78,12 @@ namespace Heraldo.UI
 
         public void AmmoText(string num="")
         {
-            ammoCountText.text = "Ammo Count: "+num;
+            int _num;
+            if (int.TryParse(num, out _num))
+            {
+                ammoCountText.text = _num==0?"No ammo!":_num<0?"Melee weapon":"Ammo Count: "+num;
+            } 
+            else Debug.Log("Invalid ammo quantity");
         }
 
         public void ShowHideAmmoText(bool show=false)

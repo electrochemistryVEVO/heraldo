@@ -58,27 +58,30 @@ namespace Heraldo.Character
         {
             bool enabled;
             enabledInputMap.TryGetValue("select_weapon", out enabled);
-            if (!value.isPressed && enabled)
+            if (enabled)
             {
-                SelectWeapon(1);
+                SelectWeapon(0);
+                holster = false;
             }
         }
         public void OnWpnSelect2(InputValue value)
         {
             bool enabled;
             enabledInputMap.TryGetValue("select_weapon", out enabled);
-            if (!value.isPressed && enabled)
+            if (enabled)
             {
-                SelectWeapon(2);
+                SelectWeapon(1);
+                holster = false;
             }
         }
         public void OnWpnSelect3(InputValue value)
-        {
+        { 
             bool enabled;
             enabledInputMap.TryGetValue("select_weapon", out enabled);
-            if (!value.isPressed && enabled)
+            if (enabled)
             {
-                SelectWeapon(3);
+                SelectWeapon(2);
+                holster = false;
             }
         }
 

@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
+using Heraldo.Cutscenes;
 using Heraldo.Flavor;
+using Heraldo.Global.Enums;
 using Heraldo.UI;
 using Heraldo.Weapon;
 using Heraldo.Weapon.Holster;
@@ -21,6 +23,8 @@ namespace Heraldo.Character
         public float GroundOffset;
         public float InteractRadius;
         public Transform HumanoidLeftGrip;
+        public Animator CharacterAnimator;
+        public TimelineManager timelineManager;
         public GameObject Weapon;
         private GenericWeapon _currentWeapon;
         GenericWpnHolster _arsenal;
@@ -126,9 +130,9 @@ namespace Heraldo.Character
                 _shoot_deb = true;
                 if (_currentWeapon !=null)
                 {
-                    StartCoroutine(WeaponCooldown(_currentWeapon.ReloadTime));
                     _currentWeapon.Fire(_camera.position,_camera.TransformDirection(Vector3.forward),spreadMultiplier);
-                    _playableFpsShoot.Play();
+                    StartCoroutine(WeaponCooldown(_currentWeapon.ReloadTime));
+                    timelineManager.timelineDict[_currentWeapon.ShootTimelineId()].Play();
                     _uiCanvas.AmmoText(_currentWeapon.AmmoCount.ToString()); 
                 }
                 
@@ -199,7 +203,11 @@ namespace Heraldo.Character
         //Logica de armas
         public void EraseWeapon()
         {
-            _currentWeapon.ShowHide(false);
+            if (_currentWeapon != null)
+            {
+                _currentWeapon.Enabled = false;
+                _currentWeapon.ShowHide(false);
+            } 
             _currentWeapon = null;
             _uiCanvas.ShowHideAmmoText();
             //Destroy(Weapon);
@@ -216,9 +224,11 @@ namespace Heraldo.Character
 
         public void EquipWeapon(GenericWeapon weapon)
         {
+            weapon.Enabled = true;
             _currentWeapon = weapon;
             weapon.ShowHide();
-            weapon.ViewModel.transform.SetParent(HumanoidLeftGrip);
+            StartCoroutine(WeaponCooldown(0.7f));
+            //weapon.ViewModel.transform.SetParent(HumanoidLeftGrip);
             _uiCanvas.AmmoText(weapon.AmmoCount.ToString());
             _uiCanvas.ShowHideAmmoText(true);
         }

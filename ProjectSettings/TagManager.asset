@@ -12,6 +12,7 @@ TagManager:
   - Ally Routines
   - UI Canvas
   - AStarGrid
+  - NPCSensesManager
   layers:
   - Default
   - TransparentFX
