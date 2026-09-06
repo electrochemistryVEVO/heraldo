@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Heraldo.Character.Enemy;
 using Heraldo.Character.Pathfinding;
 using Heraldo.Global.Structs;
 using Heraldo.Weapon;
@@ -25,16 +26,21 @@ namespace Heraldo.Character
 
     public class EnemyController : MonoBehaviour
     {
+        private static readonly float DIST_THRESHOLD = 0.2f;
+        private static readonly int Speed = Animator.StringToHash("speed");
+
         public int MaxHealth = 100;
         public bool IsAlly = false;
         public float RespiteTime = 2.5f;
         public float TurningSpeed = 0.5f;
         public TroopController Troop;
         public GenericWeapon currentWeapon;
-        public Transform RotatingTransform;
-        private WeakReference<GameObject> _rotatingObject;
+        public Transform RotatingTransform; 
+        public Animator NpcAnimator;
+        public EnemyWeaponHandler WpnHandler;
         public MeshRenderer corpseMesh;
         
+        private WeakReference<GameObject> _rotatingObject;
         private int _health;
         private StarterAssetsInputs _inputs;
         private AStarGrid _aStarGrid;
@@ -52,11 +58,8 @@ namespace Heraldo.Character
                 {
                     return _target;
                 }
-                else
-                {
-                    TriggerExit(_target.GetComponent<Collider>());
-                    return null;
-                }
+                //TriggerExit(_target.GetComponent<Collider>());
+                return null;
             }
         }
         
@@ -64,8 +67,6 @@ namespace Heraldo.Character
         
         //Events
         private TaskCompletionSource<bool> _pathNodeReached;
-
-        private bool _fireTimeElapsed = true;
         //True = continue with the process, False = interrupt
 
         private int Health
@@ -86,8 +87,18 @@ namespace Heraldo.Character
             set
             {
                 _enemyState = value;
-                if(_enemyState == EnemyState.DEAD) Die();
-                
+                switch (_enemyState)
+                {
+                    case EnemyState.DEAD:
+                        Die();
+                        break;
+                    case EnemyState.HUNT:
+                        SearchForPlayer();
+                        break;
+                    case EnemyState.PATROL:
+                        FollowRoutine();
+                        break;
+                }
             }
         }
 
@@ -117,7 +128,7 @@ namespace Heraldo.Character
             if (Enemy_State == EnemyState.SEEK)
             {
                 Enemy_State = EnemyState.PATROL;
-                FollowRoutine();
+                //FollowRoutine();
             }
             else ScanForEnemies();
             //TODO: Add interruption when player is spotted
@@ -151,7 +162,7 @@ namespace Heraldo.Character
                 //Debug.Log(_walkToPoint);
                 Vector2 walkToPoint = _walkToPoint.Value;
                 Vector2 move = new Vector2(walkToPoint.x-transform.position.x, walkToPoint.y - transform.position.z );
-                if (move.magnitude <= 0.2)
+                if (move.magnitude <= DIST_THRESHOLD)
                 {
                     _inputs.move = Vector2.zero;
                     _pathNodeReached.TrySetResult(true);
@@ -160,96 +171,109 @@ namespace Heraldo.Character
                 {
                     Vector3 _move = transform.InverseTransformDirection(new Vector3(move.x,0,move.y)/ move.magnitude);
                     _inputs.move = new Vector2(_move.x, _move.z);
-                }
+                } 
+                Vector3 lookAtWalkToPoint = new Vector3(walkToPoint.x, transform.position.y, walkToPoint.y);
+                //if((lookAtWalkToPoint-transform.position).magnitude>DIST_THRESHOLD)
+                  //  transform.LookAt(lookAtWalkToPoint);
             }
             else _inputs.move = Vector2.zero;
+            NpcAnimator.SetFloat(Speed,_inputs.move.magnitude);
+        }
+
+        void LateUpdate()
+        {
             //Apuntar a puntos 
             if (_aimAtPoint != null)
             {
                 Vector3 nextLookAt = new Vector3(_aimAtPoint.Value.x, transform.position.y, _aimAtPoint.Value.z);
                 //Vector3 currentLookAt = transform.TransformPoint(Vector3.forward) * nextLookAt.magnitude;
-                transform.LookAt(//Vector3.Lerp(currentLookAt,nextLookAt,TurningSpeed),
+                RotatingTransform.LookAt(//Vector3.Lerp(currentLookAt,nextLookAt,TurningSpeed),
                     nextLookAt,
                     Vector3.up);
             }
             //Reciclaje de TriggerExit para borrar elementos que fueron borrados
-            DeallocateDead();
+            //DeallocateDead();
         }
 
-        public void TriggerStay(Collider other)
-        {
-            if (!this.enabled) return;
-            if (isObjectEnemy(other.gameObject) && CheckIfInLOS(other))
-            {
-                SpotPlayer(other.gameObject);
-            }
-            else TriggerExit(other); //Debe de haber una manera mas efectiva de hacer esto
-        }
-
-        private void DeallocateDead()
-        {
-            foreach (var weakRef in _currentTargets.ToList())
-            {
-                GameObject _target;
-                bool hasTarget = weakRef.TryGetTarget(out _target);
-                if (!hasTarget || _target ==null)
-                { 
-                    _currentTargets.Remove(weakRef);
-                } 
-            }
-            
-            if (_currentTargets.Count <= 0 && Enemy_State == EnemyState.ENGAGE)
-            {
-                Debug.Log("Does this ever get fired");
-                Enemy_State = EnemyState.HUNT;
-                SearchForPlayer();
-            }
-            else
-            {
-                //Debug.Log("Numero de objetivos: "+_currentTargets.Count);
-            }
-            //SearchForPlayer(other.gameObject);
-        }
-
-        public void TriggerExit(Collider other)
-        {
-            if (!this.enabled) return;
-            //var bufTargets = new List<WeakReference<GameObject>>(_currentTargets);
-            lock (_currentTargets)
-            {
-                if (isObjectEnemy(other.gameObject))
-                {
-                    foreach (var weakRef in _currentTargets.ToList())
-                    {
-                        GameObject _target;
-                        bool hasTarget = weakRef.TryGetTarget(out _target);
-                        if (hasTarget && _target!=null)
-                        {
-                            if (_target == other.gameObject)
-                            {
-                                _currentTargets.Remove(weakRef);
-                                break;
-                            }
-                        }
-                        else _currentTargets.Remove(weakRef);
-                    }
-
-                    //if (_currentTargets.Count <= 0)
-                    //SearchForPlayer(other.transform.position);
-                }
-            }
-        }
         
-        public void TriggerEnter(Collider other)
-        {
-            if (!this.enabled) return;
-            //Debug.Log(other.name);
-            if (isObjectEnemy(other.gameObject))
-            {
-                Debug.Log("Enemy spotted: "+other.gameObject.name);
-                _currentTargets.Add(new WeakReference<GameObject>(other.gameObject));
-            }
-        }
+
+        /*
+         *
+         * private void DeallocateDead()
+           {
+               foreach (var weakRef in _currentTargets.ToList())
+               {
+                   GameObject _target;
+                   bool hasTarget = weakRef.TryGetTarget(out _target);
+                   if (!hasTarget || _target ==null)
+                   { 
+                       _currentTargets.Remove(weakRef);
+                   } 
+               }
+               
+               if (_currentTargets.Count <= 0 && Enemy_State == EnemyState.ENGAGE)
+               {
+                   Debug.Log("Does this ever get fired");
+                   Enemy_State = EnemyState.HUNT;
+                   SearchForPlayer();
+               }
+               else
+               {
+                   //Debug.Log("Numero de objetivos: "+_currentTargets.Count);
+               }
+               //SearchForPlayer(other.gameObject);
+           }
+
+           public void TriggerExit(Collider other)
+           {
+               if (!this.enabled) return;
+               //var bufTargets = new List<WeakReference<GameObject>>(_currentTargets);
+               lock (_currentTargets)
+               {
+                   if (isObjectEnemy(other.gameObject))
+                   {
+                       foreach (var weakRef in _currentTargets.ToList())
+                       {
+                           GameObject _target;
+                           bool hasTarget = weakRef.TryGetTarget(out _target);
+                           if (hasTarget && _target!=null)
+                           {
+                               if (_target == other.gameObject)
+                               {
+                                   _currentTargets.Remove(weakRef);
+                                   break;
+                               }
+                           }
+                           else _currentTargets.Remove(weakRef);
+                       }
+
+                       //if (_currentTargets.Count <= 0)
+                       //SearchForPlayer(other.transform.position);
+                   }
+               }
+           }
+           
+           public void TriggerEnter(Collider other)
+           {
+               if (!this.enabled) return;
+               //Debug.Log(other.name);
+               if (isObjectEnemy(other.gameObject))
+               {
+                   Debug.Log("Enemy spotted: "+other.gameObject.name);
+                   _currentTargets.Add(new WeakReference<GameObject>(other.gameObject));
+               }
+           }
+           
+           public void TriggerStay(Collider other)
+           {
+               if (!this.enabled) return;
+               if (isObjectEnemy(other.gameObject) && CheckIfInLOS(other))
+               {
+                   SpotPlayer(other.gameObject);
+               }
+               else TriggerExit(other); //Debe de haber una manera mas efectiva de hacer esto
+           }
+         */
         
         private bool CheckIfInLOS(Collider other)
         {
@@ -331,6 +355,7 @@ namespace Heraldo.Character
             _pathNodeReached.TrySetResult(false);
             _walkToPoint = null;
             //Check if this enemy is the closest
+            /*
             foreach (var weakRef in _currentTargets.ToList())
             {
                 GameObject closestEnemy;
@@ -343,10 +368,11 @@ namespace Heraldo.Character
                         return;
                 } 
                 else _currentTargets.Remove(weakRef);
-            } 
+            } */
             Enemy_State = EnemyState.ENGAGE;
             _aimAtPoint = player.transform.position;
-            if(_fireTimeElapsed)StartCoroutine(AttackEnemy(player.transform.position));
+            WpnHandler.Attack(player.transform);
+            //if(_fireTimeElapsed)StartCoroutine(AttackEnemy(player.transform.position));
         }
 
         private async Task SearchForPlayer()
@@ -358,22 +384,13 @@ namespace Heraldo.Character
             //Trace path to last known position of player
             if(_aimAtPoint!=null)
             {
-                Enemy_State = EnemyState.HUNT;
+                _enemyState = EnemyState.HUNT;
                 _pathNodeReached = new TaskCompletionSource<bool>();
                 await CalculatePath(_aimAtPoint.Value); 
             } 
             Debug.Log("Player lost");
             Enemy_State = EnemyState.PATROL;
             
-        }
-
-        IEnumerator AttackEnemy(Vector3 enemyPos)
-        {
-            Debug.Log("Fired");
-            _fireTimeElapsed = false;
-            currentWeapon.Fire(transform.position,enemyPos - transform.position); 
-            yield return new WaitForSeconds(RespiteTime);
-            _fireTimeElapsed = true;
         }
 
         public void OnTakeDamage(DamageInfo damage)

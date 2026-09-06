@@ -15,17 +15,20 @@ namespace Heraldo.Character.Enemy
         {
             //Debug.Log(other.gameObject.name);
             //transform.parent.parent.SendMessage("TriggerStay",other);
+            if(other.name=="PlayerCapsule Variant")Debug.Log("Object "+other.name+" is still in LOS");
             TriggerStay(other);
         }
 
         private void OnTriggerExit(Collider other)
         {
+            Debug.Log("Object "+other.name+" left LOS");
             //transform.parent.parent.SendMessage("TriggerExit",other);
             TriggerExit(other);
         }
         
         private void OnTriggerEnter(Collider other)
         {
+            Debug.Log("Object "+other.name+" entered LOS");
             TriggerEnter(other);
             //transform.parent.parent.SendMessage("TriggerEnter",other);
         }
@@ -81,10 +84,9 @@ namespace Heraldo.Character.Enemy
         public void TriggerEnter(Collider other)
         {
             if (!this.enabled) return;
-            //Debug.Log(other.name);
             if (npc.isObjectEnemy(other.gameObject))
             {
-                Debug.Log("Enemy spotted: "+other.gameObject.name);
+                //Debug.Log("Enemy spotted: "+other.gameObject.name);
                 _currentTargets.Add(new WeakReference<GameObject>(other.gameObject));
             }
         }
@@ -92,11 +94,34 @@ namespace Heraldo.Character.Enemy
         public void TriggerStay(Collider other)
         {
             if (!this.enabled) return;
-            if (npc.isObjectEnemy(other.gameObject) && CheckIfInLOS(other))
+            if (npc.isObjectEnemy(other.gameObject) 
+                && CheckIfInLOS(other)
+                && CheckIfClosestEnemy(other.gameObject)
+                )
             {
                 npc.SpotPlayer(other.gameObject);
             }
-            else TriggerExit(other); //Debe de haber una manera mas efectiva de hacer esto
+            //else TriggerExit(other); //Debe de haber una manera mas efectiva de hacer esto
+        }
+        
+        public bool CheckIfClosestEnemy(GameObject player)
+        { 
+            //Check if this enemy is the closest
+            foreach (var weakRef in _currentTargets)
+            {
+                GameObject closestEnemy;
+                bool hasClosestEnemy = weakRef.TryGetTarget(out closestEnemy);
+                if (hasClosestEnemy && closestEnemy != null)
+                {
+                    if (closestEnemy == player) continue;
+                    if ((transform.position - closestEnemy.transform.position).magnitude
+                        < (transform.position - player.transform.position).magnitude)
+                        return false;
+                } 
+                else _currentTargets.Remove(weakRef);
+            }
+            return true;
+            //if(_fireTimeElapsed)StartCoroutine(AttackEnemy(player.transform.position));
         }
         
         private void DeallocateDead()
@@ -107,22 +132,17 @@ namespace Heraldo.Character.Enemy
                 bool hasTarget = weakRef.TryGetTarget(out _target);
                 if (!hasTarget || _target ==null)
                 { 
+                    //Debug.Log("Target removed");
                     _currentTargets.Remove(weakRef);
-                    
                 } 
             }
             
-            
             if (_currentTargets.Count <= 0 && npc.Enemy_State == EnemyState.ENGAGE)
             {
-                Debug.Log("Does this ever get fired");
+                //Debug.Log("Does this ever get fired");
                 npc.Enemy_State = EnemyState.HUNT;
                 //SearchForPlayer();
-            }
-            else
-            {
-                Debug.Log("Numero de objetivos: "+_currentTargets.Count);
-            }
+            } 
             //SearchForPlayer(other.gameObject);
         }
     }

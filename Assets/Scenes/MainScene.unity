@@ -5104,6 +5104,10 @@ PrefabInstance:
       propertyPath: CrouchGroundOffset
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 2301929466299004204, guid: 3d3cb87e696be98e2a40c1c9e759fa35, type: 3}
+      propertyPath: m_TagString
+      value: Player
+      objectReference: {fileID: 0}
     - target: {fileID: 2301929466299004207, guid: 3d3cb87e696be98e2a40c1c9e759fa35, type: 3}
       propertyPath: m_LocalScale.x
       value: 4.551481
