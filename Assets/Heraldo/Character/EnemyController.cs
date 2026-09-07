@@ -8,6 +8,7 @@ using Heraldo.Character.Pathfinding;
 using Heraldo.Global.Structs;
 using Heraldo.Weapon;
 using StarterAssets;
+using Unity.Properties;
 using UnityEngine;
 
 namespace Heraldo.Character
@@ -173,8 +174,8 @@ namespace Heraldo.Character
                     _inputs.move = new Vector2(_move.x, _move.z);
                 } 
                 Vector3 lookAtWalkToPoint = new Vector3(walkToPoint.x, transform.position.y, walkToPoint.y);
-                //if((lookAtWalkToPoint-transform.position).magnitude>DIST_THRESHOLD)
-                  //  transform.LookAt(lookAtWalkToPoint);
+                if((lookAtWalkToPoint-transform.position).magnitude>DIST_THRESHOLD)
+                    transform.LookAt(lookAtWalkToPoint);
             }
             else _inputs.move = Vector2.zero;
             NpcAnimator.SetFloat(Speed,_inputs.move.magnitude);
@@ -193,99 +194,11 @@ namespace Heraldo.Character
             }
             //Reciclaje de TriggerExit para borrar elementos que fueron borrados
             //DeallocateDead();
-        }
-
-        
-
-        /*
-         *
-         * private void DeallocateDead()
-           {
-               foreach (var weakRef in _currentTargets.ToList())
-               {
-                   GameObject _target;
-                   bool hasTarget = weakRef.TryGetTarget(out _target);
-                   if (!hasTarget || _target ==null)
-                   { 
-                       _currentTargets.Remove(weakRef);
-                   } 
-               }
-               
-               if (_currentTargets.Count <= 0 && Enemy_State == EnemyState.ENGAGE)
-               {
-                   Debug.Log("Does this ever get fired");
-                   Enemy_State = EnemyState.HUNT;
-                   SearchForPlayer();
-               }
-               else
-               {
-                   //Debug.Log("Numero de objetivos: "+_currentTargets.Count);
-               }
-               //SearchForPlayer(other.gameObject);
-           }
-
-           public void TriggerExit(Collider other)
-           {
-               if (!this.enabled) return;
-               //var bufTargets = new List<WeakReference<GameObject>>(_currentTargets);
-               lock (_currentTargets)
-               {
-                   if (isObjectEnemy(other.gameObject))
-                   {
-                       foreach (var weakRef in _currentTargets.ToList())
-                       {
-                           GameObject _target;
-                           bool hasTarget = weakRef.TryGetTarget(out _target);
-                           if (hasTarget && _target!=null)
-                           {
-                               if (_target == other.gameObject)
-                               {
-                                   _currentTargets.Remove(weakRef);
-                                   break;
-                               }
-                           }
-                           else _currentTargets.Remove(weakRef);
-                       }
-
-                       //if (_currentTargets.Count <= 0)
-                       //SearchForPlayer(other.transform.position);
-                   }
-               }
-           }
-           
-           public void TriggerEnter(Collider other)
-           {
-               if (!this.enabled) return;
-               //Debug.Log(other.name);
-               if (isObjectEnemy(other.gameObject))
-               {
-                   Debug.Log("Enemy spotted: "+other.gameObject.name);
-                   _currentTargets.Add(new WeakReference<GameObject>(other.gameObject));
-               }
-           }
-           
-           public void TriggerStay(Collider other)
-           {
-               if (!this.enabled) return;
-               if (isObjectEnemy(other.gameObject) && CheckIfInLOS(other))
-               {
-                   SpotPlayer(other.gameObject);
-               }
-               else TriggerExit(other); //Debe de haber una manera mas efectiva de hacer esto
-           }
-         */
-        
-        private bool CheckIfInLOS(Collider other)
-        {
-            Vector3 pos = transform.position;
-            Vector3 dist = other.gameObject.transform.position - pos;
-            RaycastHit hit;
-            bool wasHit = Physics.Raycast(pos,dist.normalized, out hit,dist.magnitude,LayerMask.GetMask("Default"));
-            return !wasHit || hit.collider.gameObject == other.gameObject;
-        }
+        }  
 
         async Task FollowRoutine()
         {
+            Debug.Log("Following nearest routine");
             double minDist = Double.MaxValue;
             Transform minRoutine = null;
             foreach(var routine in _enemyRoutines.GetComponentsInChildren<Transform>())
@@ -306,86 +219,114 @@ namespace Heraldo.Character
             Debug.Log(steps.Length);
             int i = 0;
             int j = 0;
-            while (j<5)
+            while (j<50)
             {
-                Transform currentStep = steps[i + 1];
-                Debug.Log(currentStep.gameObject.name);
-                _walkToPoint = new Vector2(currentStep.position.x,currentStep.position.z);
-                _aimAtPoint = _walkToPoint;
-                Debug.Log(_walkToPoint);
-                bool reached = await _pathNodeReached.Task;
-                _pathNodeReached = new TaskCompletionSource<bool>();
+                Transform currentStep = steps[i + 1]; 
+                //_walkToPoint = new Vector2(currentStep.position.x,currentStep.position.z);
+                //_aimAtPoint = _walkToPoint; 
+                bool reached = await CalculatePath(currentStep.position);
+                //bool reached = await _pathNodeReached.Task; 
                 if (!reached) return;
+                _pathNodeReached = new TaskCompletionSource<bool>();
                 i = (i + 1) % (steps.Length - 1);
                 j++;
             }
         }
-        
-        async Task CalculatePath(Vector3 pos)
+
+        public async Task CalculatePathExternal(Vector3 pos)
         {
+            await CalculatePath(pos);
+        }
+        
+        async Task<bool> CalculatePath(Vector3 pos)
+        {
+            _pathNodeReached.TrySetResult(false);
+            _pathNodeReached = new TaskCompletionSource<bool>();
+            Debug.Log(pos);
             Path path = await _aStarGrid.GetPath(transform.position, pos);
             Debug.Log("Path returned");
             if (path == null)
             {
                 Debug.Log("Returned null");
-                return;
+                return false;
             }
             int i = 0;
             path = path.next;
-            while (path != null && i<50)
+            while (path != null && i<100)
             {
                 Debug.Log("Siguiente objetivo: (" + path.pos_x + ";" + path.pos_y + ")");
                 _walkToPoint = new Vector2(path.realPos.x, path.realPos.z);
-                _aimAtPoint = _walkToPoint;
+                //_aimAtPoint = new Vector2(transform.position.x - path.realPos.x,transform.position.z - path.realPos.z);
                 //GameObject point = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                //point.transform.position = new Vector3(_walkToPoint.Value.x,transform.position.y,_walkToPoint.Value.y);
+                //Debug.Log("G = "+path.g);
+                //point.transform.position = new Vector3(_walkToPoint.Value.x,transform.position.y+40,_walkToPoint.Value.y);
                 bool reached = await _pathNodeReached.Task;
+                if (!reached) return false;
                 _pathNodeReached = new TaskCompletionSource<bool>();
-                Debug.Log(reached);
-                if (!reached) return;
+                Debug.Log(reached); 
                 path = path.next;
                 i++;
             }
+
+            return true;
         }
 
         public void SpotPlayer(GameObject player)
         { 
             //Interrumpir
-            //Debug.Log("Player spotted");
-            _pathNodeReached.TrySetResult(false);
+            //Debug.Log(player.name+" spotted");
+            //_pathNodeReached.TrySetResult(false);
+            //_pathNodeReached = new();
             _walkToPoint = null;
-            //Check if this enemy is the closest
-            /*
-            foreach (var weakRef in _currentTargets.ToList())
+            if(Enemy_State != EnemyState.ENGAGE)
             {
-                GameObject closestEnemy;
-                bool hasClosestEnemy = weakRef.TryGetTarget(out closestEnemy);
-                if (hasClosestEnemy && closestEnemy != null)
-                {
-                    if (closestEnemy == player) continue;
-                    if ((transform.position - closestEnemy.transform.position).magnitude
-                        < (transform.position - player.transform.position).magnitude)
-                        return;
-                } 
-                else _currentTargets.Remove(weakRef);
-            } */
-            Enemy_State = EnemyState.ENGAGE;
+                Enemy_State = EnemyState.ENGAGE;
+                WpnHandler.Target = player.transform;
+                AskWeaponHandler().Wait();
+            }
+            //Enemy_State = EnemyState.ENGAGE;
             _aimAtPoint = player.transform.position;
             WpnHandler.Attack(player.transform);
             //if(_fireTimeElapsed)StartCoroutine(AttackEnemy(player.transform.position));
+        }
+
+        async Task AskWeaponHandler()
+        {
+            Debug.Log("Asking weapon handler");
+            /*
+             * int j = 0;
+               while (j<50)
+               {
+                   //Transform currentStep = steps[i + 1]; 
+                   //_walkToPoint = new Vector2(currentStep.position.x,currentStep.position.z);
+                   //_aimAtPoint = _walkToPoint; 
+                   Vector3? nextPos = WpnHandler.NextMovementAction();
+                   Debug.Log(nextPos);
+                   if (nextPos == null) return;
+                   bool reached = await CalculatePath((Vector3)nextPos);
+                   //bool reached = await _pathNodeReached.Task; 
+                   if (!reached || Enemy_State != EnemyState.ENGAGE) return;
+                   _pathNodeReached = new TaskCompletionSource<bool>();
+                   //i = (i + 1) % (steps.Length - 1);
+                   j++;
+               } 
+             */
         }
 
         private async Task SearchForPlayer()
         {
             Debug.Log("Searching for player");
             //Interrumpir
-            if(Enemy_State != EnemyState.HUNT)_pathNodeReached.TrySetResult(false);
+            if(Enemy_State != EnemyState.HUNT)
+            {
+                _pathNodeReached.TrySetResult(false);
+                _pathNodeReached = new();
+            }
             _walkToPoint = null;
             //Trace path to last known position of player
             if(_aimAtPoint!=null)
             {
                 _enemyState = EnemyState.HUNT;
-                _pathNodeReached = new TaskCompletionSource<bool>();
                 await CalculatePath(_aimAtPoint.Value); 
             } 
             Debug.Log("Player lost");

@@ -63,8 +63,8 @@ GameObject:
   - component: {fileID: 8529739373959141727}
   - component: {fileID: 5798367496651531945}
   - component: {fileID: 5839257735316063213}
-  - component: {fileID: 7496219141539095145}
   - component: {fileID: 4742680525538809043}
+  - component: {fileID: 3850620242962904740}
   m_Layer: 14
   m_Name: VisionCube
   m_TagString: Untagged
@@ -171,8 +171,21 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 1
---- !u!65 &7496219141539095145
-BoxCollider:
+--- !u!114 &4742680525538809043
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2193604956465351242}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d966509141a46698a8b7d0eea8b65d6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Heraldo.Character.Enemy.LineOfSight
+  npc: {fileID: 5091107231566671745}
+--- !u!135 &3850620242962904740
+SphereCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -190,21 +203,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &4742680525538809043
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2193604956465351242}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8d966509141a46698a8b7d0eea8b65d6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Heraldo.Character.Enemy.LineOfSight
-  npc: {fileID: 5091107231566671745}
+  m_Radius: 0.50000006
+  m_Center: {x: 0, y: -0.00000017881393, z: 0}
 --- !u!1 &2517149060062456832
 GameObject:
   m_ObjectHideFlags: 0
@@ -488,6 +488,57 @@ MonoBehaviour:
   NpcAnimator: {fileID: 4122495430319911944}
   WpnHandler: {fileID: 195308348359125836}
   corpseMesh: {fileID: 5714443089648118619}
+--- !u!1 &3320575737433213150
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 151340216155386138}
+  - component: {fileID: 8629413841677570927}
+  m_Layer: 11
+  m_Name: macheteAttack
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &151340216155386138
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3320575737433213150}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7336877910395810987}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!320 &8629413841677570927
+PlayableDirector:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3320575737433213150}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_PlayableAsset: {fileID: 11400000, guid: e33ffe661f65ccbe9869bcd62f4623aa, type: 2}
+  m_InitialState: 1
+  m_WrapMode: 2
+  m_DirectorUpdateMode: 1
+  m_InitialTime: 0
+  m_SceneBindings:
+  - key: {fileID: 6921202728620025225, guid: e33ffe661f65ccbe9869bcd62f4623aa, type: 2}
+    value: {fileID: 4122495430319911944}
+  m_ExposedReferences:
+    m_References: []
 --- !u!1 &5049888828123240531
 GameObject:
   m_ObjectHideFlags: 0
@@ -627,6 +678,7 @@ MonoBehaviour:
   Target: {fileID: 0}
   Timelines: {fileID: 5411023363703778641}
   RespiteTime: 1
+  npc: {fileID: 0}
   NpcAnimator: {fileID: 4122495430319911944}
 --- !u!1 &5656881956529547638
 GameObject:
@@ -896,6 +948,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 909434442659634032}
+  - {fileID: 151340216155386138}
   m_Father: {fileID: 6527429721397917713}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &5411023363703778641
@@ -913,6 +966,8 @@ MonoBehaviour:
   timelines:
   - key: 0
     value: {fileID: 7255962605396106544}
+  - key: 1
+    value: {fileID: 8629413841677570927}
 --- !u!1001 &150167237196146451
 PrefabInstance:
   m_ObjectHideFlags: 0

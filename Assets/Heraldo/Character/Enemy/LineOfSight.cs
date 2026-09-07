@@ -15,20 +15,20 @@ namespace Heraldo.Character.Enemy
         {
             //Debug.Log(other.gameObject.name);
             //transform.parent.parent.SendMessage("TriggerStay",other);
-            if(other.name=="PlayerCapsule Variant")Debug.Log("Object "+other.name+" is still in LOS");
+            //if(other.name=="PlayerCapsule Variant")Debug.Log("Object "+other.name+" is still in LOS");
             TriggerStay(other);
         }
 
         private void OnTriggerExit(Collider other)
         {
-            Debug.Log("Object "+other.name+" left LOS");
+            //Debug.Log("Object "+other.name+" left LOS");
             //transform.parent.parent.SendMessage("TriggerExit",other);
             TriggerExit(other);
         }
         
         private void OnTriggerEnter(Collider other)
         {
-            Debug.Log("Object "+other.name+" entered LOS");
+            //Debug.Log("Object "+other.name+" entered LOS");
             TriggerEnter(other);
             //transform.parent.parent.SendMessage("TriggerEnter",other);
         }
@@ -49,7 +49,7 @@ namespace Heraldo.Character.Enemy
 
         private void Update()
         {
-            DeallocateDead();
+            //DeallocateDead();
         }
 
         public void TriggerExit(Collider other)
@@ -75,7 +75,8 @@ namespace Heraldo.Character.Enemy
                         else _currentTargets.Remove(weakRef);
                     }
 
-                    //if (_currentTargets.Count <= 0)
+                    if (_currentTargets.Count <= 0)
+                        npc.Enemy_State = EnemyState.HUNT;
                     //SearchForPlayer(other.transform.position);
                 }
             }
@@ -115,7 +116,7 @@ namespace Heraldo.Character.Enemy
                 {
                     if (closestEnemy == player) continue;
                     if ((transform.position - closestEnemy.transform.position).magnitude
-                        < (transform.position - player.transform.position).magnitude)
+                        <= (transform.position - player.transform.position).magnitude)
                         return false;
                 } 
                 else _currentTargets.Remove(weakRef);

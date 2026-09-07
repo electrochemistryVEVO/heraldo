@@ -14,10 +14,12 @@ namespace Heraldo.Character.Enemy
         private static readonly int SelectedWeapon = Animator.StringToHash("selectedWeapon");
         public Transform Target;
         public TimelineManager Timelines;
-        public float RespiteTime = 1.0f; 
+        public float RespiteTime = 1.0f;
+        public EnemyController npc;
         public Animator NpcAnimator;
         
         private GenericWeapon[] _weapons;
+        private int _selectedIndex = 0;
         private GenericWeapon _selectedWeapon;
         private bool _fireTimeElapsed = true;
 
@@ -36,24 +38,24 @@ namespace Heraldo.Character.Enemy
         void AdaptToPlayer()
         {
             float minDist = Single.MaxValue;
+            int minIndex = 0;
             int i = 0;
             foreach (var wpn in _weapons)
             {
                 float dist = (transform.position - Target.position).magnitude;
-                if (dist < wpn.Range && minDist >= dist)
+                if (wpn.AmmoCount != 0 && dist < wpn.Range && minDist >= dist)
                 {
                     minDist = dist;
-                    SwitchWeapon(i);
+                    break;
                     //_selectedWeapon = wpn;
                 } 
                 i++;
             }
+            SwitchWeapon(i);
         }
         
         IEnumerator AttackEnemy(Vector3 enemyPos)
         {
-            Debug.Log("Fired");
-            Debug.Log(_selectedWeapon.ReloadTime + RespiteTime);
             _fireTimeElapsed = false;
             Timelines.timelineDict[_selectedWeapon.ShootTimelineId()].Play();
             _selectedWeapon.Fire(transform.position,enemyPos - transform.position); 
@@ -63,15 +65,34 @@ namespace Heraldo.Character.Enemy
 
         private void SwitchWeapon(int index)
         {
+            Debug.Log(index);
             if(_selectedWeapon)_selectedWeapon.ShowHide(false);
             _selectedWeapon = _weapons[index];
             _selectedWeapon.ShowHide();
             NpcAnimator.SetInteger(SelectedWeapon,index);
         }
 
-        public void AimAtTarget(Vector3 target)
+        public Vector3? NextMovementAction()
         {
-            
+            if (Target)
+            {
+                Vector3 targetPos = Target.position;
+                Debug.Log("Target position: "+Target.position);
+                Debug.Log("Current position: "+transform.position);
+                if ((transform.position - targetPos).magnitude > _selectedWeapon.Range)
+                {
+                    //Move forwards of backwards
+                    Debug.Log("Approaching");
+                    return targetPos +
+                           (transform.position - targetPos).normalized * _selectedWeapon.Range;
+                }
+                //Move sideways
+                Debug.Log("Strafing");
+                return targetPos +
+                       Vector3.Cross((transform.position - targetPos).normalized, Vector3.up);
+            }
+            Debug.Log("Selected nothing");
+            return null;
         }
     }
 }
