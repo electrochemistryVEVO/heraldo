@@ -34,7 +34,7 @@ namespace Heraldo.Weapon
                     Debug.Log(hit.collider.name);
                     //Taking damage
                     hit.transform.gameObject.SendMessage("OnTakeDamage", 
-                        new DamageInfo(20,hit.point),
+                        new DamageInfo(Damage,hit.point),
                         SendMessageOptions.DontRequireReceiver);
                     //Impact VFX
                     _impact.FleshImpact(hit.point,hit.normal);

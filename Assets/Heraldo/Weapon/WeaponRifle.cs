@@ -35,7 +35,7 @@ namespace Heraldo.Weapon
                 {
                     //Taking damage
                     hit.transform.gameObject.SendMessage("OnTakeDamage", 
-                        new DamageInfo(20,position),
+                        new DamageInfo(Damage,position),
                         SendMessageOptions.DontRequireReceiver);
                     //Impact VFX
                     _impact.FleshImpact(hit.point,hit.normal);

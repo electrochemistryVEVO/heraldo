@@ -14,6 +14,7 @@ namespace Heraldo.Weapon
         public float ReloadTime;
         public float Range;
         public int MaxAmmo;
+        public int Damage;
         public int AmmoCount;
         public Vector2 MaxMinRecoil;
         public bool Enabled;

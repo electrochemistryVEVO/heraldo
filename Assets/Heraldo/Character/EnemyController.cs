@@ -29,6 +29,7 @@ namespace Heraldo.Character
     {
         private static readonly float DIST_THRESHOLD = 0.2f;
         private static readonly int Speed = Animator.StringToHash("speed");
+        private static readonly int IsDead = Animator.StringToHash("isDead");
 
         public int MaxHealth = 100;
         public bool IsAlly = false;
@@ -39,7 +40,7 @@ namespace Heraldo.Character
         public Transform RotatingTransform; 
         public Animator NpcAnimator;
         public EnemyWeaponHandler WpnHandler;
-        public MeshRenderer corpseMesh;
+        public GameObject corpseObject;
         
         private WeakReference<GameObject> _rotatingObject;
         private int _health;
@@ -50,6 +51,8 @@ namespace Heraldo.Character
         private GameObject _enemyRoutines; 
         private List<WeakReference<GameObject>> _currentTargets; //Ordenado por prioridad (cual esta mas cerca)
         private WeakReference<GameObject> _activeTarget;
+        private Task _activeMovementTask;
+        private List<Path> _activeRoute = null;
         public GameObject ActiveTarget {
             get
             {
@@ -91,30 +94,61 @@ namespace Heraldo.Character
                 switch (_enemyState)
                 {
                     case EnemyState.DEAD:
+                        Transition(null);
                         Die();
                         break;
-                    case EnemyState.HUNT:
-                        SearchForPlayer();
-                        break;
                     case EnemyState.PATROL:
-                        FollowRoutine();
+                        Transition(null);
+                        _activeMovementTask = FollowRoutine();
+                        break;
+                    case EnemyState.HUNT:
+                        Transition(null);
+                        _activeMovementTask = SearchForPlayer();
                         break;
                 }
             }
         }
+        
+        private void Transition(Task t1)
+        {
+            _pathNodeReached.TrySetResult(false);
+            if (_activeMovementTask is { Status: TaskStatus.Running })
+            {
+                _activeMovementTask.Wait(); 
+            }
+            //Limpiar ruta luego de usar
+            if (_activeRoute != null)
+            {
+                foreach (var path in _activeRoute)
+                {
+                    path.dirty = false;
+                }
+            }
+            _pathNodeReached = new();
+            _activeMovementTask = t1;
+        }
 
         private void Die()
         {
+            Debug.Log("Isn't that awesome, Kris? That guy just died");
             GameObject _obj;
-            bool gotObj = _rotatingObject.TryGetTarget(out _obj);
-            if(gotObj)
-            {
-                _obj.SendMessage("QueueFree");
-            }
-            corpseMesh.enabled = true;
-            Destroy(this.GetComponent<FirstPersonController>());
-            Destroy(this.GetComponent<CharacterController>());
-            Destroy(this);
+            //_pathNodeReached.SetResult(false);
+            /*
+             bool gotObj = _rotatingObject.TryGetTarget(out _obj);
+               if(gotObj)
+               {
+                   _obj.SendMessage("QueueFree");
+               }
+             */
+            corpseObject.transform.parent = transform.parent;
+            //corpseObject.transform.position = transform.position;
+            corpseObject.SetActive(true);
+            
+            //Destroy(this.GetComponent<FirstPersonController>());
+            //Destroy(this.GetComponent<CharacterController>());
+            //NpcAnimator.SetBool(IsDead,true);
+            //enabled = false;
+            Destroy(gameObject);
         }
 
         IEnumerator ScanForEnemies()
@@ -151,7 +185,8 @@ namespace Heraldo.Character
             _enemyRoutines = GameObject.FindWithTag(IsAlly ? "Ally Routines" :"Enemy Routines");
             _currentTargets = new List<WeakReference<GameObject>>();
             _rotatingObject = new WeakReference<GameObject>(RotatingTransform.gameObject);
-            FollowRoutine();
+            Transition(null);
+            _activeMovementTask = FollowRoutine();
             //CalculatePath(Vector3.zero);
         }
 
@@ -225,9 +260,10 @@ namespace Heraldo.Character
                 //_walkToPoint = new Vector2(currentStep.position.x,currentStep.position.z);
                 //_aimAtPoint = _walkToPoint; 
                 bool reached = await CalculatePath(currentStep.position);
+                Debug.Log("Current step:" + (i+1));
+                _pathNodeReached = new TaskCompletionSource<bool>();
                 //bool reached = await _pathNodeReached.Task; 
                 if (!reached) return;
-                _pathNodeReached = new TaskCompletionSource<bool>();
                 i = (i + 1) % (steps.Length - 1);
                 j++;
             }
@@ -243,17 +279,23 @@ namespace Heraldo.Character
             _pathNodeReached.TrySetResult(false);
             _pathNodeReached = new TaskCompletionSource<bool>();
             Debug.Log(pos);
-            Path path = await _aStarGrid.GetPath(transform.position, pos);
+            List<Path> pathList = await _aStarGrid.GetPath(transform.position, pos);
             Debug.Log("Path returned");
-            if (path == null)
+            if (pathList.Count == 0)
             {
                 Debug.Log("Returned null");
                 return false;
             }
             int i = 0;
-            path = path.next;
-            while (path != null && i<100)
+            //path = path.next;
+            _activeRoute = pathList;
+            foreach (var path in pathList)
             {
+                if (path == null)
+                {
+                    Debug.Log("Returned null path");
+                    break;
+                }
                 Debug.Log("Siguiente objetivo: (" + path.pos_x + ";" + path.pos_y + ")");
                 _walkToPoint = new Vector2(path.realPos.x, path.realPos.z);
                 //_aimAtPoint = new Vector2(transform.position.x - path.realPos.x,transform.position.z - path.realPos.z);
@@ -261,13 +303,17 @@ namespace Heraldo.Character
                 //Debug.Log("G = "+path.g);
                 //point.transform.position = new Vector3(_walkToPoint.Value.x,transform.position.y+40,_walkToPoint.Value.y);
                 bool reached = await _pathNodeReached.Task;
-                if (!reached) return false;
+                path.dirty = false;
+                if (!reached)
+                {
+                    return false;
+                }
                 _pathNodeReached = new TaskCompletionSource<bool>();
                 Debug.Log(reached); 
-                path = path.next;
+                //path = path.next;
                 i++;
             }
-
+            Debug.Log("Path finished with "+i+" iterations");
             return true;
         }
 
@@ -317,20 +363,23 @@ namespace Heraldo.Character
         {
             Debug.Log("Searching for player");
             //Interrumpir
-            if(Enemy_State != EnemyState.HUNT)
+            /*if(Enemy_State != EnemyState.HUNT)
             {
                 _pathNodeReached.TrySetResult(false);
                 _pathNodeReached = new();
             }
-            _walkToPoint = null;
+            _walkToPoint = null;*/
             //Trace path to last known position of player
             if(_aimAtPoint!=null)
             {
                 _enemyState = EnemyState.HUNT;
-                await CalculatePath(_aimAtPoint.Value); 
+                bool notInterrupted = await CalculatePath(_aimAtPoint.Value);
+                if (!notInterrupted) return;
             } 
             Debug.Log("Player lost");
             Enemy_State = EnemyState.PATROL;
+            //Debug.Log("Calculate path to "+ (_aimAtPoint.ToString() ?? "nothing"));
+            Debug.Log("This part causes a memory leak");
             
         }
 
@@ -339,12 +388,14 @@ namespace Heraldo.Character
             if (_enemyState != EnemyState.DEAD)
             {
                 Health = Math.Max(Health-damage.damage,0);
+                if (Health == 0) return;
                 Debug.Log("Health: " + Health);
                 //Search for the one who shot me
                 if (damage.enemyPos is not null)
                 {
                     _aimAtPoint = damage.enemyPos;
-                    SearchForPlayer();
+                    Transition(null);
+                    _activeMovementTask = SearchForPlayer();
                 }
             }
         }

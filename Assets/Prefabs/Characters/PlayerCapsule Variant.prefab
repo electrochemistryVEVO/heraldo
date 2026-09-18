@@ -348,6 +348,7 @@ MonoBehaviour:
   ReloadTime: 1
   Range: 900
   MaxAmmo: 30
+  Damage: 0
   AmmoCount: 30
   MaxMinRecoil: {x: 1, y: 4}
   Enabled: 0
@@ -516,13 +517,14 @@ MonoBehaviour:
   ReloadTime: 1
   Range: 20
   MaxAmmo: -1
+  Damage: 50
   AmmoCount: -1
   MaxMinRecoil: {x: 0.01, y: 0.02}
   Enabled: 0
   ViewModel: {fileID: 7232230376568833879}
   hittableLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 2048
 --- !u!1 &8025182310762236735
 GameObject:
   m_ObjectHideFlags: 0
@@ -571,13 +573,14 @@ MonoBehaviour:
   ReloadTime: 4
   Range: 900
   MaxAmmo: 30
+  Damage: 100
   AmmoCount: 30
   MaxMinRecoil: {x: 0.01, y: 0.05}
   Enabled: 0
   ViewModel: {fileID: 6072836801981648099}
   hittableLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 2048
 --- !u!1 &8149891147203183900
 GameObject:
   m_ObjectHideFlags: 0

@@ -174,6 +174,7 @@ namespace Heraldo.Character
             bool hasTarget = _nearestInteractableRef.TryGetTarget(out obj);
             if (hasTarget && obj!=null)
             {
+                Debug.Log("Interactable: " + obj.name);
                 //Debug.Log("Picked up " + obj.name);
                 var wpn = obj.GetComponent<Interactable>();
                 if (wpn is WpnPickup)
@@ -188,6 +189,7 @@ namespace Heraldo.Character
                 Destroy(obj);
                 //TODO: Automatically change to correct weapon index
             }
+            else Debug.Log("No interactable");
         }
 
         private void AdjustCrosshair()
