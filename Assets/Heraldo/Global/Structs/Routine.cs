@@ -24,5 +24,10 @@ namespace Heraldo.Global.Structs
                 .ToArray();
             return new Routine(_nodeList,true);
         }
+
+        public int Length()
+        {
+            return NodeList.Length;
+        }
     }
 }

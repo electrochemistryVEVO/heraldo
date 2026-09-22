@@ -1,0 +1,82 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using JetBrains.Annotations;
+using Unity.VisualScripting;
+using UnityEngine;
+
+namespace Heraldo.Character.Enemy
+{
+    public struct Spot
+    {
+        public Vector3 position;
+
+        public int index;
+        //public bool taken;
+        [CanBeNull] public EnemyController occupier;
+
+        public Spot(Vector3 position,int index)
+        {
+            this.position = position;
+            this.index = index;
+            //this.taken = false;
+            this.occupier = null;
+        }
+    }
+    public class CoverBarricade : MonoBehaviour
+    {
+        public Transform spots;
+        public bool IsAlly;
+        private Spot[] _spotPositions;
+        
+
+        private void Awake()
+        {
+            List<Transform> positions = spots.GetComponentsInChildren<Transform>().ToList();
+            positions.Remove(spots);
+            _spotPositions = positions.Select((val,index) => new Spot(val.position,index)).ToArray();
+        }
+
+        public string GetCoverBarricadeId()
+        {
+            return (IsAlly ? "Barricade" : "Cover") + transform.GetSiblingIndex();
+        }
+
+        public string GetFreeSpotId(int ind)
+        {
+            return (IsAlly ? "Barricade" : "Cover") + transform.GetSiblingIndex() + ":" + ind; 
+        }
+
+        public bool HasFreeSpots()
+        {
+            return _spotPositions.Any((val) => val.occupier.IsUnityNull());
+        }
+
+        public void SetSpotOccupier(EnemyController npc, int index)
+        {
+            Debug.Log("[SET-SPOT-OCCUPIER] "+GetFreeSpotId(index));
+            Debug.Log("[SET-SPOT-OCCUPIER] Is npc null? " + (npc.IsUnityNull() ? "YES" : "NO"));
+            Debug.Log("[SET-SPOT-OCCUPIER] Was occupier null? "+ (_spotPositions[index].occupier.IsUnityNull()?"YES":"NO") );
+            _spotPositions[index].occupier = npc;
+        }
+
+        public Spot ClosestSpot(Vector3 point)
+        { 
+            int _index = -1;
+            int i = -1;
+            Vector3 result = _spotPositions.Aggregate(Vector3.negativeInfinity,
+                (acum, val) =>
+                {
+                    i++;
+                    if (!val.occupier.IsUnityNull() 
+                        || !((acum - point).magnitude > (val.position - point).magnitude)) return acum;
+                    _index = i;
+                    return val.position;
+                }
+                );
+            if (_index<0) throw new Exception("No existen puntos disponibles en este cover");
+            //index = _index;
+            return _spotPositions[_index];
+        }
+    }
+}

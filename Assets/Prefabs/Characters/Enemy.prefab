@@ -81,8 +81,8 @@ Transform:
   m_GameObject: {fileID: 2193604956465351242}
   serializedVersion: 2
   m_LocalRotation: {x: -0.11613585, y: 6.5765684e-15, z: -1.0594675e-14, w: 0.9932334}
-  m_LocalPosition: {x: -0.0006456173, y: 0.01926517, z: 0.048215542}
-  m_LocalScale: {x: 0.13247988, y: 0.043557458, z: 0.1780979}
+  m_LocalPosition: {x: -0.001, y: 0.097, z: 0.376}
+  m_LocalScale: {x: 0.61555374, y: 0.20238511, z: 0.8275131}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 8795412579443364210}
@@ -637,7 +637,7 @@ MonoBehaviour:
   ReloadTime: 4
   Range: 500
   MaxAmmo: 30
-  Damage: 0
+  Damage: 50
   AmmoCount: 30
   MaxMinRecoil: {x: 0, y: 0}
   Enabled: 1
@@ -1227,7 +1227,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: f49ac41e7411ce645b732eb4b9446169, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5866666021909216657, guid: f49ac41e7411ce645b732eb4b9446169, type: 3}
       propertyPath: m_Controller

@@ -65,7 +65,7 @@ namespace Heraldo.Character.Enemy
 
         private void SwitchWeapon(int index)
         {
-            Debug.Log(index);
+            //Debug.Log(index);
             if(_selectedWeapon)_selectedWeapon.ShowHide(false);
             _selectedWeapon = _weapons[index];
             _selectedWeapon.ShowHide();

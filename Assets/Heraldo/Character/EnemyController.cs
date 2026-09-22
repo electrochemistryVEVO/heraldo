@@ -53,6 +53,13 @@ namespace Heraldo.Character
         private WeakReference<GameObject> _activeTarget;
         private Task _activeMovementTask;
         private List<Path> _activeRoute = null;
+        
+        //ID
+        private Guid _id = Guid.Empty;
+
+        public Guid ID => _id;
+
+        private Routine? _overdriveRoutine;
         public GameObject ActiveTarget {
             get
             {
@@ -83,7 +90,7 @@ namespace Heraldo.Character
             }
         }
 
-        private EnemyState _enemyState;
+        private EnemyState _enemyState = EnemyState.ALIVE;
 
         public EnemyState Enemy_State
         {
@@ -130,24 +137,13 @@ namespace Heraldo.Character
 
         private void Die()
         {
-            Debug.Log("Isn't that awesome, Kris? That guy just died");
-            GameObject _obj;
-            //_pathNodeReached.SetResult(false);
-            /*
-             bool gotObj = _rotatingObject.TryGetTarget(out _obj);
-               if(gotObj)
-               {
-                   _obj.SendMessage("QueueFree");
-               }
-             */
+            Debug.Log("[DEATH] Enemy "+ID+" died.");
+            //Mandar mensaje a tropa
+            if (Troop) Troop.trooperDown(ID);
+            //Activar cadaver
             corpseObject.transform.parent = transform.parent;
-            //corpseObject.transform.position = transform.position;
             corpseObject.SetActive(true);
-            
-            //Destroy(this.GetComponent<FirstPersonController>());
-            //Destroy(this.GetComponent<CharacterController>());
-            //NpcAnimator.SetBool(IsDead,true);
-            //enabled = false;
+            //Destruir
             Destroy(gameObject);
         }
 
@@ -172,6 +168,11 @@ namespace Heraldo.Character
         public bool isObjectEnemy(GameObject obj)
         {
             return IsAlly ? obj.CompareTag("Enemy Character") : (obj.CompareTag("Player") || obj.CompareTag("Ally"));
+        }
+
+        private void Awake()
+        {
+            _id = Guid.NewGuid();
         }
 
         void Start()
@@ -229,11 +230,10 @@ namespace Heraldo.Character
             }
             //Reciclaje de TriggerExit para borrar elementos que fueron borrados
             //DeallocateDead();
-        }  
+        }
 
-        async Task FollowRoutine()
+        private Routine? GetClosestRoutine()
         {
-            Debug.Log("Following nearest routine");
             double minDist = Double.MaxValue;
             Transform minRoutine = null;
             foreach(var routine in _enemyRoutines.GetComponentsInChildren<Transform>())
@@ -246,27 +246,67 @@ namespace Heraldo.Character
                     minRoutine = routine;
                 }
             }
+            
+            if (minRoutine == null) return null; 
+            Routine result = Routine.FromGameObject(minRoutine.gameObject);
+            return result;
+        }
 
-            if (minRoutine == null) return;
-            Debug.Log(minRoutine.name);
-            Transform[] steps = minRoutine.gameObject.GetComponentsInChildren<Transform>();
-            if (steps.Length == 0) return;
-            Debug.Log(steps.Length);
+        async Task FollowRoutine()
+        {
+            Routine? minRoutine;
+            if (_overdriveRoutine.HasValue) minRoutine = _overdriveRoutine;
+            else
+            {
+                Debug.Log("Following nearest routine");
+                double minDist = Double.MaxValue;
+                minRoutine = GetClosestRoutine();
+                if (minRoutine == null) return;
+            }
+            Vector3[] steps = minRoutine.Value.NodeList;
+            if (steps.Length == 0) return; 
             int i = 0;
             int j = 0;
             while (j<50)
             {
-                Transform currentStep = steps[i + 1]; 
+                Vector3 currentStep = steps[i]; 
                 //_walkToPoint = new Vector2(currentStep.position.x,currentStep.position.z);
                 //_aimAtPoint = _walkToPoint; 
-                bool reached = await CalculatePath(currentStep.position);
-                Debug.Log("Current step:" + (i+1));
+                bool reached = await CalculatePath(currentStep);
                 _pathNodeReached = new TaskCompletionSource<bool>();
                 //bool reached = await _pathNodeReached.Task; 
                 if (!reached) return;
-                i = (i + 1) % (steps.Length - 1);
+                i = (i+1) % (steps.Length);
+                if (!minRoutine.Value.Loopable && (i % steps.Length == 0)) break;
                 j++;
             }
+        }
+
+        public async Task FollowExternalRoutine(Routine routine)
+        {
+            _overdriveRoutine = routine;
+            // Si aun no esta preparando Start(), cambia a Patrol
+            if (Enemy_State != EnemyState.ALIVE) Enemy_State = EnemyState.PATROL;
+            //Enemy_State = EnemyState.PATROL;
+            /*_enemyState = EnemyState.PATROL;
+            Transition(null);
+            Vector3[] steps = routine.NodeList;
+            if (steps.Length == 0) return;
+            int i = 0;
+            int j = 0;
+            while (j<50)
+            {
+                Vector3 currentStep = steps[i];
+                //_walkToPoint = new Vector2(currentStep.position.x,currentStep.position.z);
+                //_aimAtPoint = _walkToPoint;
+                bool reached = await CalculatePath(currentStep);
+                _pathNodeReached = new TaskCompletionSource<bool>();
+                //bool reached = await _pathNodeReached.Task;
+                if (!reached) return;
+                i = (i+1) % (steps.Length);
+                if (!routine.Loopable && (i % steps.Length == 0)) break;
+                j++;
+            }*/
         }
 
         public async Task CalculatePathExternal(Vector3 pos)
@@ -296,7 +336,7 @@ namespace Heraldo.Character
                     Debug.Log("Returned null path");
                     break;
                 }
-                Debug.Log("Siguiente objetivo: (" + path.pos_x + ";" + path.pos_y + ")");
+                //Debug.Log("Siguiente objetivo: (" + path.pos_x + ";" + path.pos_y + ")");
                 _walkToPoint = new Vector2(path.realPos.x, path.realPos.z);
                 //_aimAtPoint = new Vector2(transform.position.x - path.realPos.x,transform.position.z - path.realPos.z);
                 //GameObject point = GameObject.CreatePrimitive(PrimitiveType.Sphere);
@@ -309,11 +349,10 @@ namespace Heraldo.Character
                     return false;
                 }
                 _pathNodeReached = new TaskCompletionSource<bool>();
-                Debug.Log(reached); 
                 //path = path.next;
                 i++;
             }
-            Debug.Log("Path finished with "+i+" iterations");
+            //Debug.Log("Path finished with "+i+" iterations");
             return true;
         }
 

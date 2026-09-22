@@ -162,7 +162,6 @@ namespace Heraldo.Character.Pathfinding
             if (optimalPath != null && !optimalPath.GetPos().Equals(goal))
             {
                 Vector2Int nextPos = optimalPath.GetPos();
-                Debug.Log(Distance(pos,goal));
                 optimalPath = ComputePath(pathList,depth - 1, g + Distance(pos,nextPos), nextPos, goal);
             }
             //else optimalPath = new Path(optimalPath);

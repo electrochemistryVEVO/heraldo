@@ -16,7 +16,6 @@ namespace Heraldo.Cutscenes
         {
             foreach (var pair in timelines)
             {
-                Debug.Log("Inserting "+pair.key);
                 timelineDict.Add(pair.key,pair.value);
             }
         }

@@ -18,7 +18,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1672650395449667797, guid: 2a6a91d74d4e1f028a595281cba837d5, type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2517149060062456832, guid: 2a6a91d74d4e1f028a595281cba837d5, type: 3}
       propertyPath: m_Layer
@@ -99,6 +99,10 @@ PrefabInstance:
     - target: {fileID: 7496219141539095145, guid: 2a6a91d74d4e1f028a595281cba837d5, type: 3}
       propertyPath: m_IncludeLayers.m_Bits
       value: 2048
+      objectReference: {fileID: 0}
+    - target: {fileID: 8009479257972574234, guid: 2a6a91d74d4e1f028a595281cba837d5, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
