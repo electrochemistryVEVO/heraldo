@@ -9,11 +9,14 @@ EditorBuildSettings:
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
   - enabled: 1
-    path: Assets/Scenes/MainMenu.unity
+    path: Assets/Scenes/RetryScreen.unity
     guid: 93c9ae6d655a5f22ea83e8fe076fbebb
   - enabled: 1
     path: Assets/Scenes/MainScene.unity
     guid: c1abcd6e386dbdf189f4fd972e05991a
+  - enabled: 1
+    path: Assets/Scenes/MainMenu.unity
+    guid: 6629b43a0ff96401ea2e593b1e380b58
   m_configObjects:
     com.unity.dt.app-ui: {fileID: 11400000, guid: 99f9c9493070a9d4c979a8fec7c5a8d3, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

@@ -3,6 +3,7 @@ using System.Collections;
 using Heraldo.Cutscenes;
 using Heraldo.Flavor;
 using Heraldo.Global.Enums;
+using Heraldo.Global.Structs;
 using Heraldo.UI;
 using Heraldo.Weapon;
 using Heraldo.Weapon.Holster;
@@ -59,6 +60,10 @@ namespace Heraldo.Character
         //Input
         private PlayerInput _playerInput;
         private bool _playerInputEnabled = true;
+        
+        //Health
+        public int MaxHealth = 100;
+        private int _health;
 
         private float SpreadMultiplier()
         {
@@ -83,9 +88,27 @@ namespace Heraldo.Character
             _prevPos = transform.position;
             _playableFpsShoot = GameObject.FindWithTag("MainCamera").GetComponent<PlayableDirector>();
             _deltaPosFpsArms = _controller.CinemachineCameraTarget.transform.position - FpsArms.position;
+            _health = MaxHealth;
+            _uiCanvas.HealthText(_health.ToString());
             //_currentWeapon = Weapon.GetComponent<GenericWeapon>();
         }
 
+        public void OnTakeDamage(DamageInfo info)
+        {
+            _health = Math.Clamp(_health - info.damage, 0, MaxHealth);
+            _uiCanvas.HealthText(_health.ToString());
+            if (_health <= 0) Die();
+        }
+
+        void Die()
+        {
+            //Animation that makes player tumble down
+            //Disable input
+            _playerInput.enabled = false;
+            //Fade to black
+            _uiCanvas.FadeToBlack(2f);
+        }
+        
         public void TriggerPlayerInput(bool value)
         {
             _playerInputEnabled = value;
