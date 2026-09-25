@@ -1,12 +1,17 @@
 using System;
 using System.Collections;
+using Heraldo.Cutscenes;
 using Heraldo.Flavor;
+using Heraldo.Global.Enums;
+using Heraldo.Global.Structs;
 using Heraldo.UI;
 using Heraldo.Weapon;
 using Heraldo.Weapon.Holster;
 using StarterAssets;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Playables;
+using UnityEngine.Timeline;
 
 namespace Heraldo.Character
 {
@@ -18,6 +23,9 @@ namespace Heraldo.Character
         public float ProneGroundOffset;
         public float GroundOffset;
         public float InteractRadius;
+        public Transform HumanoidLeftGrip;
+        public Animator CharacterAnimator;
+        public TimelineManager timelineManager;
         public GameObject Weapon;
         private GenericWeapon _currentWeapon;
         GenericWpnHolster _arsenal;
@@ -29,9 +37,12 @@ namespace Heraldo.Character
         private CharacterController characterController;
         private FirstPersonController _controller;
         private Transform _camera;
+        public Transform FpsArms;
+        private Vector3 _deltaPosFpsArms;
         
         //Global game objects referenced
         private BulletImpact _impact;
+        private PlayableDirector _playableFpsShoot;
         
         //Layer masks
         private LayerMask _wpnPickupMask;
@@ -49,6 +60,10 @@ namespace Heraldo.Character
         //Input
         private PlayerInput _playerInput;
         private bool _playerInputEnabled = true;
+        
+        //Health
+        public int MaxHealth = 100;
+        private int _health;
 
         private float SpreadMultiplier()
         {
@@ -71,9 +86,29 @@ namespace Heraldo.Character
             _uiCanvas = GameObject.FindWithTag("UI Canvas").GetComponent<LevelUIManager>();
             _playerInput = GetComponent<PlayerInput>();
             _prevPos = transform.position;
+            _playableFpsShoot = GameObject.FindWithTag("MainCamera").GetComponent<PlayableDirector>();
+            _deltaPosFpsArms = _controller.CinemachineCameraTarget.transform.position - FpsArms.position;
+            _health = MaxHealth;
+            _uiCanvas.HealthText(_health.ToString());
             //_currentWeapon = Weapon.GetComponent<GenericWeapon>();
         }
 
+        public void OnTakeDamage(DamageInfo info)
+        {
+            _health = Math.Clamp(_health - info.damage, 0, MaxHealth);
+            _uiCanvas.HealthText(_health.ToString());
+            if (_health <= 0) Die();
+        }
+
+        void Die()
+        {
+            //Animation that makes player tumble down
+            //Disable input
+            _playerInput.enabled = false;
+            //Fade to black
+            _uiCanvas.FadeToBlack(2f);
+        }
+        
         public void TriggerPlayerInput(bool value)
         {
             _playerInputEnabled = value;
@@ -81,6 +116,10 @@ namespace Heraldo.Character
         
         private void Update()
         {
+            //Ajustar brazotes fps
+            //FpsArms.position = _controller.CinemachineCameraTarget.transform.position - _deltaPosFpsArms;
+            //FpsArms.rotation = _controller.CinemachineCameraTarget.transform.rotation;
+            
             //Ajustar crosshair
             float spreadMultiplier = SpreadMultiplier();
             _uiCanvas.SetCrosshairSpread(spreadMultiplier);
@@ -114,8 +153,9 @@ namespace Heraldo.Character
                 _shoot_deb = true;
                 if (_currentWeapon !=null)
                 {
-                    StartCoroutine(WeaponCooldown(_currentWeapon.ReloadTime));
                     _currentWeapon.Fire(_camera.position,_camera.TransformDirection(Vector3.forward),spreadMultiplier);
+                    StartCoroutine(WeaponCooldown(_currentWeapon.ReloadTime));
+                    timelineManager.timelineDict[_currentWeapon.ShootTimelineId()].Play();
                     _uiCanvas.AmmoText(_currentWeapon.AmmoCount.ToString()); 
                 }
                 
@@ -157,6 +197,7 @@ namespace Heraldo.Character
             bool hasTarget = _nearestInteractableRef.TryGetTarget(out obj);
             if (hasTarget && obj!=null)
             {
+                Debug.Log("Interactable: " + obj.name);
                 //Debug.Log("Picked up " + obj.name);
                 var wpn = obj.GetComponent<Interactable>();
                 if (wpn is WpnPickup)
@@ -171,6 +212,7 @@ namespace Heraldo.Character
                 Destroy(obj);
                 //TODO: Automatically change to correct weapon index
             }
+            else Debug.Log("No interactable");
         }
 
         private void AdjustCrosshair()
@@ -186,6 +228,11 @@ namespace Heraldo.Character
         //Logica de armas
         public void EraseWeapon()
         {
+            if (_currentWeapon != null)
+            {
+                _currentWeapon.Enabled = false;
+                _currentWeapon.ShowHide(false);
+            } 
             _currentWeapon = null;
             _uiCanvas.ShowHideAmmoText();
             //Destroy(Weapon);
@@ -202,7 +249,11 @@ namespace Heraldo.Character
 
         public void EquipWeapon(GenericWeapon weapon)
         {
+            weapon.Enabled = true;
             _currentWeapon = weapon;
+            weapon.ShowHide();
+            StartCoroutine(WeaponCooldown(0.7f));
+            //weapon.ViewModel.transform.SetParent(HumanoidLeftGrip);
             _uiCanvas.AmmoText(weapon.AmmoCount.ToString());
             _uiCanvas.ShowHideAmmoText(true);
         }

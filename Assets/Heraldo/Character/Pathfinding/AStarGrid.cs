@@ -20,6 +20,17 @@ namespace Heraldo.Character.Pathfinding
         {
             return new Vector2Int(this.pos_x, this.pos_y);
         }
+
+        public Path(Path path)
+        {
+            pos_x = path.pos_x;
+            pos_y = path.pos_y;
+            realPos = path.realPos;
+            g = path.g;
+            next = path.next;
+            arrived = path.arrived;
+        }
+        
         public Path(int x,int y,Vector3 realPos, double _g, Path _next=null,bool _arrived = false)
         {
             pos_x = x;
@@ -36,6 +47,7 @@ namespace Heraldo.Character.Pathfinding
         public LayerMask WorldMapMask;
         public Vector3 MapSize;
         public Vector2Int MapCellNum;
+        private static readonly float NAVMESH_OBSTACLE_PENALTY = 99999.0f;
         private Vector2Int MapRatio {get
             {
                 return Vector2Int.RoundToInt(new Vector2(MapSize.x / MapCellNum.x, MapSize.y / MapCellNum.y));
@@ -61,11 +73,13 @@ namespace Heraldo.Character.Pathfinding
             {
                 var pos = new Vector3(MapStart.x + _mapCellSize.x * (i/MapCellNum.y),
                     0, MapStart.z + _mapCellSize.y * (i%MapCellNum.y)); 
-                bool wasHit = Physics.Raycast(pos,Vector3.down, out hit, float.MaxValue, WorldMapMask);
+                bool wasHit = Physics.SphereCast(pos,MathF.Max(_mapCellSize.x,_mapCellSize.y),
+                    Vector3.down, out hit, float.MaxValue, WorldMapMask);
                 if (wasHit)
                 { 
                     Vector2Int intPos = new Vector2Int(i/MapCellNum.y,i%MapCellNum.y);
-                    _paths.Add(intPos,new Path(intPos.x,intPos.y,hit.point,0)); 
+                    _paths.Add(intPos,new Path(intPos.x,intPos.y,hit.point,
+                        hit.collider.gameObject.layer == LayerMask.NameToLayer("NavObstacle") ? NAVMESH_OBSTACLE_PENALTY : 0)); 
                 } 
             } 
         }
@@ -88,15 +102,19 @@ namespace Heraldo.Character.Pathfinding
             double h = Distance(pos,goal);
             return h + g;
         }
-        private Path ComputePath(int depth,double g,Vector2Int pos,Vector2Int goal)
+        private Path ComputePath(List<Path> pathList, int depth,double g,Vector2Int pos,Vector2Int goal)
         {
             Path currentPath;
             bool hasPath = _paths.TryGetValue(pos,out currentPath);
+            double origG = 0;
             if (hasPath)
             {
-                currentPath.g = g;
+                origG = currentPath.g;
+                //currentPath = new Path(currentPath);
+                //currentPath.g = g;
                 currentPath.next = null;
                 currentPath.dirty = true;
+                pathList.Add(currentPath);
             }
             else
             {
@@ -120,14 +138,15 @@ namespace Heraldo.Character.Pathfinding
                 if (hasPath)
                 { 
                     if(destinationPath.dirty)continue;
-                    destinationPath.g = g + cost;
+                    cost += destinationPath.g;
+                    //destinationPath.g = g + cost;
                     destinationPath.next = null;
                 }
                 else continue; 
                 
                 if (destination.x == goal.x && destination.y == goal.y)
                 {
-                    optimalPath = destinationPath;
+                    optimalPath = new Path(destinationPath);
                     optimalPath.arrived = true;
                     currentPath.arrived = true;
                     break; 
@@ -139,10 +158,16 @@ namespace Heraldo.Character.Pathfinding
                     minCost = cost; 
                 } 
             }
-
-            if(optimalPath!=null && !optimalPath.arrived)optimalPath = ComputePath(depth - 1, g + minCost, optimalPath.GetPos(), goal);
+            //Debug.Log(minCost);
+            if (optimalPath != null && !optimalPath.GetPos().Equals(goal))
+            {
+                Vector2Int nextPos = optimalPath.GetPos();
+                optimalPath = ComputePath(pathList,depth - 1, g + Distance(pos,nextPos), nextPos, goal);
+            }
+            //else optimalPath = new Path(optimalPath);
+            currentPath.g = origG;
             currentPath.next = optimalPath;
-            currentPath.dirty = false; 
+            //currentPath.dirty = false; 
             return currentPath;
         }
 
@@ -151,7 +176,7 @@ namespace Heraldo.Character.Pathfinding
             GetDistances();
         }
 
-        public async Task<Path> GetPath(Vector3 pos, Vector3 goal)
+        public async Task<List<Path>> GetPath(Vector3 pos, Vector3 goal)
         {
             if(_paths==null)GetDistances(); //Primer chequeo
             Debug.Log("Primer casilla de grid: ("+MapStart.x+";"+MapStart.z+")");
@@ -165,8 +190,9 @@ namespace Heraldo.Character.Pathfinding
             Debug.Log("Pos: ("+_pos.x+";"+_pos.y+")");
             Debug.Log("Goal: ("+_goal.x+";"+_goal.y+")");
             if (_pos == _goal) return null;
-            Path path = ComputePath(MapCellNum.x*MapCellNum.y, 0, _pos, _goal);
-            return path;
+            List<Path> pathList = new List<Path>();
+            Path path = ComputePath(pathList,MapCellNum.x*MapCellNum.y, 0, _pos, _goal);
+            return pathList;
         }
     }
 }

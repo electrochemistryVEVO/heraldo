@@ -6,6 +6,7 @@ using JetBrains.Annotations;
 using NUnit.Framework.Constraints;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace Heraldo.UI
@@ -19,7 +20,10 @@ namespace Heraldo.UI
         public TMP_Text cutsceneActorNameText;
         public TMP_Text cutsceneText;
         public TMP_Text ammoCountText;
+        public TMP_Text healthText;
         public Image ammoLoad;
+        public Image blackFadePanel;
+        
         private Color ALLY_COLOR = Color.green;
         private Color ENEMY_COLOR = Color.red;
         private bool showFlavorText = false;
@@ -78,7 +82,17 @@ namespace Heraldo.UI
 
         public void AmmoText(string num="")
         {
-            ammoCountText.text = "Ammo Count: "+num;
+            int _num;
+            if (int.TryParse(num, out _num))
+            {
+                ammoCountText.text = _num==0?"No ammo!":_num<0?"Melee weapon":"Ammo Count: "+num;
+            } 
+            else Debug.Log("Invalid ammo quantity");
+        }
+
+        public void HealthText(string num = "")
+        {
+            healthText.text = "Health: " + num;
         }
 
         public void ShowHideAmmoText(bool show=false)
@@ -98,5 +112,31 @@ namespace Heraldo.UI
             crosshair.material.SetFloat(Distance,finalDist); 
             //crosshair.material = _crosshairMaterial;
         }
+        
+        
+
+        IEnumerator _FadeToBlack(float seconds)
+        {
+            float secs = 0;
+            while (secs < seconds)
+            {
+                blackFadePanel.color = Color.Lerp(blackFadePanel.color,
+                    new Color(blackFadePanel.color.r,
+                        blackFadePanel.color.g,
+                        blackFadePanel.color.b,
+                        1f),secs/seconds);
+                secs += Time.deltaTime;
+                yield return new WaitForEndOfFrame();
+            }
+
+            Cursor.lockState = CursorLockMode.None;
+            SceneManager.LoadScene("Scenes/RetryScreen");
+        }
+
+        public void FadeToBlack(float seconds)
+        {
+            Coroutine c1 = StartCoroutine(_FadeToBlack(seconds));
+        }
+        
     }
 }

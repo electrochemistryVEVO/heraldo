@@ -12,6 +12,7 @@ TagManager:
   - Ally Routines
   - UI Canvas
   - AStarGrid
+  - NPCSensesManager
   layers:
   - Default
   - TransparentFX
@@ -20,7 +21,7 @@ TagManager:
   - Water
   - UI
   - Camera_SunOverlay
-  - 
+  - NavObstacle
   - 
   - 
   - 
