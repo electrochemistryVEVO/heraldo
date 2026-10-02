@@ -588,7 +588,7 @@ MonoBehaviour:
   Target: {fileID: 0}
   Timelines: {fileID: 5411023363703778641}
   RespiteTime: 1
-  npc: {fileID: 0}
+  npc: {fileID: 5091107231566671745}
   NpcAnimator: {fileID: 4122495430319911944}
 --- !u!1 &5656881956529547638
 GameObject:
@@ -639,6 +639,7 @@ MonoBehaviour:
   MaxAmmo: 30
   Damage: 50
   AmmoCount: 30
+  IsAlly: 0
   MaxMinRecoil: {x: 0, y: 0}
   Enabled: 1
   ViewModel: {fileID: 2050558528216942176}
@@ -819,10 +820,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Heraldo.Weapon.WeaponMelee
   ReloadTime: 1
-  Range: 30
+  Range: 10
   MaxAmmo: -1
-  Damage: 0
+  Damage: 50
   AmmoCount: -1
+  IsAlly: 0
   MaxMinRecoil: {x: 0, y: 0}
   Enabled: 0
   ViewModel: {fileID: 8730469847249001720}

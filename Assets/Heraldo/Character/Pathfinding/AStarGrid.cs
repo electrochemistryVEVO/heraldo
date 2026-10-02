@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Splines;
@@ -7,7 +8,8 @@ using UnityEngine.Splines;
 namespace Heraldo.Character.Pathfinding
 {
     public class Path
-    {
+    { 
+        
         public int pos_x;
         public int pos_y;
         public Vector3 realPos;
@@ -44,13 +46,16 @@ namespace Heraldo.Character.Pathfinding
 
     public class AStarGrid : MonoBehaviour
     {
+        static readonly int MAX_RECURSION_STEPS = 500;
+        
         public LayerMask WorldMapMask;
         public Vector3 MapSize;
         public Vector2Int MapCellNum;
         private static readonly float NAVMESH_OBSTACLE_PENALTY = 99999.0f;
+        private List<Vector3> missList = new();
         private Vector2Int MapRatio {get
             {
-                return Vector2Int.RoundToInt(new Vector2(MapSize.x / MapCellNum.x, MapSize.y / MapCellNum.y));
+                return Vector2Int.RoundToInt(new Vector2(MapSize.x / MapCellNum.x, MapSize.z / MapCellNum.y));
             }
         }
 
@@ -58,7 +63,7 @@ namespace Heraldo.Character.Pathfinding
         {
             get
             {
-                return new Vector3(transform.position.x - MapSize.x/2 + MapRatio.x/2.0f,0,transform.position.z - MapSize.y/2 + MapRatio.y/2.0f);
+                return new Vector3(transform.position.x - MapSize.x/2 + MapRatio.x/2.0f,0,transform.position.z - MapSize.z/2 + MapRatio.y/2.0f);
             }
         } 
         private Dictionary<Vector2Int, Path> _paths = null;
@@ -72,7 +77,7 @@ namespace Heraldo.Character.Pathfinding
             for (int i=0; i < MapCellNum.x * MapCellNum.y; i++)
             {
                 var pos = new Vector3(MapStart.x + _mapCellSize.x * (i/MapCellNum.y),
-                    0, MapStart.z + _mapCellSize.y * (i%MapCellNum.y)); 
+                    MapStart.y+MapSize.y, MapStart.z + _mapCellSize.y * (i%MapCellNum.y)); 
                 bool wasHit = Physics.SphereCast(pos,MathF.Max(_mapCellSize.x,_mapCellSize.y),
                     Vector3.down, out hit, float.MaxValue, WorldMapMask);
                 if (wasHit)
@@ -81,6 +86,7 @@ namespace Heraldo.Character.Pathfinding
                     _paths.Add(intPos,new Path(intPos.x,intPos.y,hit.point,
                         hit.collider.gameObject.layer == LayerMask.NameToLayer("NavObstacle") ? NAVMESH_OBSTACLE_PENALTY : 0)); 
                 } 
+                else missList.Add(pos);
             } 
         }
 
@@ -93,7 +99,7 @@ namespace Heraldo.Character.Pathfinding
             bool goalInGrid = _paths.TryGetValue(goal, out goalPath);
             if (!posInGrid || !goalInGrid) throw new Exception("Operation is out of bounds"); 
             //Y distance is biased towards downward slopes (less cost)
-            return Math.Abs(goalPath.realPos.x - posPath.realPos.x) + (goalPath.realPos.y - posPath.realPos.y)
+            return Math.Abs(goalPath.realPos.x - posPath.realPos.x) + Math.Abs(goalPath.realPos.y - posPath.realPos.y)
                 + Math.Abs(goalPath.realPos.z - posPath.realPos.z);
         }
         
@@ -118,7 +124,7 @@ namespace Heraldo.Character.Pathfinding
             }
             else
             {
-                Debug.Log("hit dead end");
+                Debug.Log("[A-STAR] Dead end: "+pos);
                 return null;
             }
             if (depth <= 0)
@@ -137,7 +143,7 @@ namespace Heraldo.Character.Pathfinding
                 hasPath = _paths.TryGetValue(destination, out destinationPath);
                 if (hasPath)
                 { 
-                    if(destinationPath.dirty)continue;
+                    //if(destinationPath.arrived)continue;
                     cost += destinationPath.g;
                     //destinationPath.g = g + cost;
                     destinationPath.next = null;
@@ -174,6 +180,28 @@ namespace Heraldo.Character.Pathfinding
         void Awake()
         {
             GetDistances();
+        } 
+        private void OnDrawGizmos()
+        {
+            Gizmos.DrawWireCube(transform.position,MapSize);
+            // foreach (var miss in missList)
+            // {
+            //     Gizmos.DrawCube(miss,Vector3.one*MapRatio.x);
+            // }
+        }
+
+        void CompressPath(List<Path> paths)
+        {
+            for(int i=1;i<paths.Count-1;i++)
+            {
+                Vector2 dist1 = paths[i + 1].GetPos() - paths[i].GetPos();
+                Vector2 dist2 = paths[i].GetPos() - paths[i - 1].GetPos();
+                if(((dist1.normalized) - (dist2.normalized)).magnitude < 0.001)
+                {
+                    paths.RemoveAt(i);
+                    i--;
+                }
+            }
         }
 
         public async Task<List<Path>> GetPath(Vector3 pos, Vector3 goal)
@@ -191,7 +219,14 @@ namespace Heraldo.Character.Pathfinding
             Debug.Log("Goal: ("+_goal.x+";"+_goal.y+")");
             if (_pos == _goal) return null;
             List<Path> pathList = new List<Path>();
-            Path path = ComputePath(pathList,MapCellNum.x*MapCellNum.y, 0, _pos, _goal);
+            int maxIter = 10;
+            do
+            {
+                List<Path> partialPath = new List<Path>();
+                ComputePath(partialPath, MAX_RECURSION_STEPS, 0, _pos, _goal);
+                CompressPath(partialPath);
+                pathList.AddRange(partialPath);
+            } while (--maxIter>0 && pathList.Count > 0 && !pathList.Last().arrived);
             return pathList;
         }
     }

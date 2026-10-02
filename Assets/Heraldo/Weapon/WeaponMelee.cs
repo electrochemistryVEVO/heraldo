@@ -28,7 +28,7 @@ namespace Heraldo.Weapon
             if (wasHit)
             {
                 //Shot lands either way
-                _hearingManager.MakeSound(hit.point,MACHETE_LAND_SOUND_RADIUS);
+                _hearingManager.MakeSound(hit.point,MACHETE_LAND_SOUND_RADIUS,IsAlly);
                 if ((hittableLayers & (1 << hit.transform.gameObject.layer))!=0)
                 {
                     Debug.Log(hit.collider.name);

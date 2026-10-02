@@ -22,6 +22,7 @@ namespace Heraldo.Character
         public float ProneSpeed = 0.5f;
         public float ProneGroundOffset;
         public float GroundOffset;
+        public bool IsCrouched = false;
         public float InteractRadius;
         public Transform HumanoidLeftGrip;
         public Animator CharacterAnimator;
@@ -136,6 +137,7 @@ namespace Heraldo.Character
                 (isCrouched && _controller.Grounded) ? CrouchGroundOffset : GroundOffset, 
                 _camera.localPosition.z
                 );
+            IsCrouched = isCrouched;
             //Calcular arma mas cercana
             CalculateNearestInteractable();
             //Modificar el crosshair

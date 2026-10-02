@@ -10,6 +10,7 @@ using Heraldo.Weapon;
 using StarterAssets;
 using Unity.Properties;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace Heraldo.Character
 {
@@ -53,6 +54,9 @@ namespace Heraldo.Character
         private WeakReference<GameObject> _activeTarget;
         private Task _activeMovementTask;
         private List<Path> _activeRoute = null;
+        private FirstPersonController _firstPerson;
+
+        private Color _gizmoColor = Color.white;
         
         //ID
         private Guid _id = Guid.Empty;
@@ -173,13 +177,11 @@ namespace Heraldo.Character
         private void Awake()
         {
             _id = Guid.NewGuid();
-        }
-
-        void Start()
-        {
+            _gizmoColor = new Color(Random.value, Random.value, Random.value);
             Health = MaxHealth;
             Enemy_State = EnemyState.ALIVE;
             _inputs = GetComponent<StarterAssetsInputs>();
+            _firstPerson = GetComponent<FirstPersonController>();
             _walkToPoint = Vector2.zero;
             _aStarGrid = GameObject.FindWithTag("AStarGrid").GetComponent<AStarGrid>();
             _pathNodeReached = new TaskCompletionSource<bool>();
@@ -189,7 +191,7 @@ namespace Heraldo.Character
             Transition(null);
             _activeMovementTask = FollowRoutine();
             //CalculatePath(Vector3.zero);
-        }
+        } 
 
         private void Update()
         {
@@ -225,7 +227,7 @@ namespace Heraldo.Character
                 Vector3 nextLookAt = new Vector3(_aimAtPoint.Value.x, transform.position.y, _aimAtPoint.Value.z);
                 //Vector3 currentLookAt = transform.TransformPoint(Vector3.forward) * nextLookAt.magnitude;
                 RotatingTransform.LookAt(//Vector3.Lerp(currentLookAt,nextLookAt,TurningSpeed),
-                    nextLookAt,
+                    _aimAtPoint.Value,
                     Vector3.up);
             }
             //Reciclaje de TriggerExit para borrar elementos que fueron borrados
@@ -270,6 +272,7 @@ namespace Heraldo.Character
             while (j<50)
             {
                 Vector3 currentStep = steps[i]; 
+                Debug.Log("Current routine of "+name+": "+currentStep);
                 //_walkToPoint = new Vector2(currentStep.position.x,currentStep.position.z);
                 //_aimAtPoint = _walkToPoint; 
                 bool reached = await CalculatePath(currentStep);
@@ -282,31 +285,44 @@ namespace Heraldo.Character
             }
         }
 
+        private void OnDrawGizmos()
+        {
+            if (_activeRoute is not null)
+            {
+                foreach (var path in _activeRoute)
+                {
+                    Gizmos.color = _gizmoColor;
+                    if(path.dirty)Gizmos.DrawCube(path.realPos,Vector3.one*4);
+                    Gizmos.color = Color.red;
+                    if(path.arrived)Gizmos.DrawSphere(path.realPos,4);
+                }
+
+                if (_walkToPoint.HasValue)
+                {
+                    
+                    Gizmos.color = Color.green;
+                    Gizmos.DrawSphere(new Vector3(_walkToPoint.Value.x,0,_walkToPoint.Value.y),1);
+                }
+            }
+        }
+
+        public string GetKey()
+        {
+            return (IsAlly ? "Ally" : "Enemy") + transform.GetSiblingIndex();
+        }
+
+        public void CapturePath(Dictionary<string,List<Path>> dict)
+        {
+            dict.Add(GetKey(),_activeRoute);
+        }
+        
         public async Task FollowExternalRoutine(Routine routine)
         {
             _overdriveRoutine = routine;
             // Si aun no esta preparando Start(), cambia a Patrol
-            if (Enemy_State != EnemyState.ALIVE) Enemy_State = EnemyState.PATROL;
-            //Enemy_State = EnemyState.PATROL;
-            /*_enemyState = EnemyState.PATROL;
-            Transition(null);
-            Vector3[] steps = routine.NodeList;
-            if (steps.Length == 0) return;
-            int i = 0;
-            int j = 0;
-            while (j<50)
-            {
-                Vector3 currentStep = steps[i];
-                //_walkToPoint = new Vector2(currentStep.position.x,currentStep.position.z);
-                //_aimAtPoint = _walkToPoint;
-                bool reached = await CalculatePath(currentStep);
-                _pathNodeReached = new TaskCompletionSource<bool>();
-                //bool reached = await _pathNodeReached.Task;
-                if (!reached) return;
-                i = (i+1) % (steps.Length);
-                if (!routine.Loopable && (i % steps.Length == 0)) break;
-                j++;
-            }*/
+            //if (Enemy_State != EnemyState.ALIVE) Enemy_State = EnemyState.PATROL;
+            Debug.Log("[EXTERNAL-ROUTINE] Trooper: "+name);
+            Enemy_State = EnemyState.PATROL; 
         }
 
         public async Task CalculatePathExternal(Vector3 pos)
@@ -324,6 +340,7 @@ namespace Heraldo.Character
             if (pathList.Count == 0)
             {
                 Debug.Log("Returned null");
+                _activeRoute = null;
                 return false;
             }
             int i = 0;
@@ -346,12 +363,15 @@ namespace Heraldo.Character
                 path.dirty = false;
                 if (!reached)
                 {
+                    _activeRoute = null;
                     return false;
                 }
                 _pathNodeReached = new TaskCompletionSource<bool>();
                 //path = path.next;
                 i++;
             }
+
+            _activeRoute = null;
             //Debug.Log("Path finished with "+i+" iterations");
             return true;
         }
@@ -439,15 +459,31 @@ namespace Heraldo.Character
             }
         }
 
-        public void BeAlerted(Vector3 position)
+        public void BeAlerted(Vector3 position, bool duringCombat = false)
         {
-            if (_enemyState != EnemyState.ENGAGE)
+            if(duringCombat)Debug.Log("[ALERTED] Enemy alerted to position "+position);
+            if ((_enemyState != EnemyState.ENGAGE) ^ duringCombat)
             {
                 OnTakeDamage(new DamageInfo(0,position));
             }
+            else
+            {
+                Debug.Log("[ALERTED] Denied. duringCombat : " + duringCombat);
+            }
         }
 
-        void WalkToPoint(Vector2 point)
+        public bool CurrentlyFollowingPath()
+        {
+            return _activeRoute is not null;
+        } 
+
+        public void ChangeWeapon(int index)
+        {
+            WpnHandler.SwitchWeapon(index);
+            _inputs.sprint = true;
+        }
+
+        public void WalkToPoint(Vector2 point)
         {
             _walkToPoint = point; 
         }

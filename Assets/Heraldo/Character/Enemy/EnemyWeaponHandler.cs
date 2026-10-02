@@ -26,13 +26,19 @@ namespace Heraldo.Character.Enemy
         private void Awake()
         {
             _weapons = GetComponentsInChildren<GenericWeapon>();
+            SwitchWeapon(0);
         }
 
         public void Attack(Transform player)
         {
             Target = player;
-            AdaptToPlayer();
-            if (_fireTimeElapsed) StartCoroutine(AttackEnemy(player.position));
+            //AdaptToPlayer();
+            if (_fireTimeElapsed)
+            {
+                if ((transform.position - player.position).magnitude <= _selectedWeapon.Range)
+                    StartCoroutine(AttackEnemy(player.position));
+                else npc.WalkToPoint(new Vector2(player.position.x,player.position.z));
+            }
         }
 
         void AdaptToPlayer()
@@ -63,11 +69,16 @@ namespace Heraldo.Character.Enemy
             _fireTimeElapsed = true;
         }
 
-        private void SwitchWeapon(int index)
+        public void SwitchWeapon(int index)
         {
             //Debug.Log(index);
-            if(_selectedWeapon)_selectedWeapon.ShowHide(false);
+            if(_selectedWeapon)
+            {
+                _selectedWeapon.ShowHide(false);
+                _selectedWeapon.Enabled = false;
+            }
             _selectedWeapon = _weapons[index];
+            _selectedWeapon.Enabled = true;
             _selectedWeapon.ShowHide();
             NpcAnimator.SetInteger(SelectedWeapon,index);
         }

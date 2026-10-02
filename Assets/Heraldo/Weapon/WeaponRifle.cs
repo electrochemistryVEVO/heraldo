@@ -30,7 +30,7 @@ namespace Heraldo.Weapon
             if (wasHit)
             {
                 //Shot lands either way
-                _hearingManager.MakeSound(hit.point,RIFLE_LAND_SOUND_RADIUS);
+                _hearingManager.MakeSound(hit.point,RIFLE_LAND_SOUND_RADIUS,IsAlly);
                 if ((hittableLayers & (1 << hit.transform.gameObject.layer))!=0)
                 {
                     //Taking damage
@@ -44,7 +44,7 @@ namespace Heraldo.Weapon
                 {
                     _impact.Impact(hit.point, hit.normal);
                     //Sound of gun firing (not necessary when enemy already knows your location)
-                    _hearingManager.MakeSound(position,RIFLE_SHOOT_SOUND_RADIUS);
+                    _hearingManager.MakeSound(position,RIFLE_SHOOT_SOUND_RADIUS,IsAlly);
                 }
             }
             

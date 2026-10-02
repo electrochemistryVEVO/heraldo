@@ -13,6 +13,7 @@ TagManager:
   - UI Canvas
   - AStarGrid
   - NPCSensesManager
+  - _MainCamera
   layers:
   - Default
   - TransparentFX
@@ -22,7 +23,7 @@ TagManager:
   - UI
   - Camera_SunOverlay
   - NavObstacle
-  - 
+  - BillboardUI
   - 
   - 
   - Enemy

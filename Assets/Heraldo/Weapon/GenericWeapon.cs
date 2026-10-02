@@ -16,6 +16,7 @@ namespace Heraldo.Weapon
         public int MaxAmmo;
         public int Damage;
         public int AmmoCount;
+        public bool IsAlly = true;
         public Vector2 MaxMinRecoil;
         public bool Enabled;
         public abstract TimelineID ShootTimelineId();
