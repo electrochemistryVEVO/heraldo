@@ -16,7 +16,7 @@ namespace Heraldo.Character.Enemy
             // sphere.GetComponent<Collider>().enabled = false;
             // sphere.transform.position = position;
             // sphere.transform.localScale = Vector3.one*radius;
-            Physics.OverlapSphereNonAlloc(position, radius,colliders,LayerMask.GetMask(isAlly ? "Enemy" : "Ally"));
+            Physics.OverlapSphereNonAlloc(position, radius,colliders,LayerMask.GetMask(isAlly ? "Enemy Character" : "Ally"));
             foreach (var collider in colliders)
             {
                 Debug.Log("[MAKE-SOUND] Alerting "+collider.name);

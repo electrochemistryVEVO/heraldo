@@ -12,23 +12,12 @@ hide empty members
 ' ─────────────────────────────────────────
 package "Global" #F0F0FF {
 
-  class DamageInfo <<struct>> {
-    +int damage
-    +Vector3? enemyPos
-    --
-    +DamageInfo(int damage, Vector3 enemyPos)
-  }
+  class DamageInfo <<struct>>
+  class KeyTimelinePair <<struct, Serializable>>
+  class HistoricalEvent <<struct, Serializable>>
 
-  class KeyTimelinePair <<struct, Serializable>> {
-    +TimelineID key
-    +PlayableDirector value
-  }
-
-  enum TimelineID {
-    FPS_SHOTGUN_SHOOT_RELOAD
-    FPS_MACHETE_SLASH
-    SOLDADO_SHOTGUN_SHOOT_RELOAD
-  }
+  enum TimelineID
+  enum HistoricalEventType
 }
 
 ' ─────────────────────────────────────────
@@ -36,56 +25,13 @@ package "Global" #F0F0FF {
 ' ─────────────────────────────────────────
 package "Cutscenes" #FFF8E0 {
 
-  enum CutsceneActionType {
-    ENEMY_SPAWN
-    ALLY_SPAWN
-    CHARACTER_MOVE
-  }
+  enum CutsceneActionType
 
-  class CutsceneAction <<Serializable>> {
-    +int order
-    +CutsceneActionType type
-    +string actor
-    +GameObject spawn
-    +Vector3 where
-  }
-
-  class CutscenePart <<Serializable>> {
-    +string author
-    +string subjectName
-    +Vector3 subjectPos
-    +string text
-    +string soundbyteId
-    +float time
-    --
-    +CutscenePart()
-  }
-
-  class Cutscene <<ScriptableObject>> {
-    +List<CutscenePart> parts
-    +List<CutsceneAction> actions
-  }
-
-  class CutsceneManager {
-    +Cutscene currentCutscene
-    +CinemachineVirtualCameraBase currentCamera
-    +event CutsceneEnded endCutscene
-    +bool CutsceneMode
-    -int _currentPart
-    -int _currentAction
-    -Transform[] _actorList
-    -LevelUIManager _uiCanvas
-    --
-    +void StartCutscene()
-    +void PrepareCutscene(Cutscene cutscene)
-    __delegate__
-    +delegate void CutsceneEnded()
-  }
-
-  class TimelineManager {
-    +List<KeyTimelinePair> timelines
-    +Dictionary<TimelineID, PlayableDirector> timelineDict
-  }
+  class CutsceneAction <<Serializable>>
+  class CutscenePart <<Serializable>>
+  class Cutscene <<ScriptableObject>>
+  class CutsceneManager
+  class TimelineManager
 }
 
 ' ─────────────────────────────────────────
@@ -93,95 +39,22 @@ package "Cutscenes" #FFF8E0 {
 ' ─────────────────────────────────────────
 package "UI" #F0FFF0 {
 
-  class LevelUIManager {
-    +Image crosshair
-    +TMP_Text crosshairText
-    +TMP_Text flavorText
-    +TMP_Text cutsceneActorNameText
-    +TMP_Text cutsceneText
-    +TMP_Text ammoCountText
-    +Image ammoLoad
-    -bool showFlavorText
-    -Material _crosshairMaterial
-    --
-    +void OnSubjectChange(GameObject subject, bool isNull)
-    +void FlavorText(string text)
-    +void CutsceneText(string subjectName, string text)
-    +void AmmoText(string num)
-    +void ShowHideAmmoText(bool show)
-    +void ToggleAmmoLoad(bool value)
-    +void SetCrosshairSpread(float spreadMultiplier)
-  }
+  class LevelUIManager
+  class MainMenuManager
+  class RetryMenuManager
 }
+
 ' ─────────────────────────────────────────
 ' WEAPON
 ' ─────────────────────────────────────────
 package "Weapon" #FFFFF0 {
 
-  abstract class GenericWeapon {
-    +float ReloadTime
-    +float Range
-    +int MaxAmmo
-    +int Damage
-    +int AmmoCount
-    +Vector2 MaxMinRecoil
-    +bool Enabled
-    +GameObject ViewModel
-    #NPCHearingManager _hearingManager
-    --
-    +void Fire(Vector3 position, Vector3 direction, float spreadMultiplier)
-    +void ShowHide(bool show)
-    +{abstract} TimelineID ShootTimelineId()
-    #virtual void FireAt(Vector3 position, Vector3 direction)
-    -Vector3 Spread(Vector3 direction, float spreadMultiplier)
-  }
-
-  class WeaponRifle {
-    +LayerMask hittableLayers
-    -BulletImpact _impact
-    -{static} float RIFLE_SHOOT_SOUND_RADIUS
-    -{static} float RIFLE_LAND_SOUND_RADIUS
-    --
-    +override TimelineID ShootTimelineId()
-    #override void FireAt(Vector3 position, Vector3 direction)
-  }
-
-  class WeaponMelee {
-    +LayerMask hittableLayers
-    -BulletImpact _impact
-    -{static} float MACHETE_LAND_SOUND_RADIUS
-    --
-    +override TimelineID ShootTimelineId()
-    #override void FireAt(Vector3 position, Vector3 direction)
-  }
-
-  class BulletImpact {
-    +GameObject bulletPrefab
-    +GameObject bulletFleshPrefab
-    --
-    +void Impact(Vector3 target, Vector3 normal)
-    +void FleshImpact(Vector3 target, Vector3 normal)
-    -IEnumerator DestroyParticle(GameObject particle)
-  }
-
-  class GenericWpnHolster {
-    -GenericWeapon[] _weapons
-    -Inputs _inputs
-    -FPSController _character
-    -Animator _charAnimator
-    -int _last_wpn_index
-    -bool _nullWpn
-    -bool _holsterDeb
-    --
-    +void PickupWeapon(int ammoCount, int wpnIndex)
-    -void Hold()
-    -void Draw()
-  }
-
-  class WpnPickup {
-    +int WeaponIndex
-    +int AmmoCount
-  }
+  abstract class GenericWeapon
+  class WeaponRifle
+  class WeaponMelee
+  class BulletImpact
+  class GenericWpnHolster
+  class WpnPickup
 }
 
 ' ─────────────────────────────────────────
@@ -189,22 +62,18 @@ package "Weapon" #FFFFF0 {
 ' ─────────────────────────────────────────
 package "Flavor" #F5F0FF {
 
-  class Interactable {
-    --
-    +virtual void Interact(FPSController controller)
-  }
+  class Interactable
+  class FlavorText
+  class CutsceneTrigger
+  class HistoricalBattleManager
+}
 
-  class FlavorText {
-    +string Text
-    --
-    +override void Interact(FPSController controller)
-  }
+' ─────────────────────────────────────────
+' HISTORICAL
+' ─────────────────────────────────────────
+package "Historical" #FFF0F8 {
 
-  class CutsceneTrigger {
-    +CutsceneManager manager
-    --
-    +override void Interact(FPSController controller)
-  }
+  class HistoricalBattleScenario <<ScriptableObject>>
 }
 
 ' ─────────────────────────────────────────
@@ -212,48 +81,9 @@ package "Flavor" #F5F0FF {
 ' ─────────────────────────────────────────
 package "Character.Player" #E8F8FF {
 
-  class Inputs {
-    +bool crouch
-    +bool shoot
-    +bool holster
-    +bool pickup
-    +int selectedWeapon
-    -Dictionary<string,bool> enabledInputMap
-    --
-    +void ModifyInputs(string[] inputs, bool value)
-    +void CrouchInput(bool newCrouchState)
-    +void ShootInput(bool doShoot)
-    +void SwitchHolster()
-    +void SelectWeapon(int i)
-    +void PickupInput(bool newPickupState)
-  }
-
-  class FPSController {
-    +float CrouchSpeed
-    +float CrouchGroundOffset
-    +float ProneSpeed
-    +float ProneGroundOffset
-    +float GroundOffset
-    +float InteractRadius
-    +Transform HumanoidLeftGrip
-    +Animator CharacterAnimator
-    +Transform FpsArms
-    -GenericWeapon _currentWeapon
-    -GenericWpnHolster _arsenal
-    -Inputs _inputs
-    -BulletImpact _impact
-    -LevelUIManager _uiCanvas
-    -TimelineManager timelineManager
-    -bool _shoot_deb
-    --
-    +void TriggerPlayerInput(bool value)
-    +void EraseWeapon()
-    +void EquipWeapon(GenericWeapon weapon)
-    -void CalculateNearestInteractable()
-    -void Pickup()
-    -float SpreadMultiplier()
-    -IEnumerator WeaponCooldown(float seconds)
-  }
+  class FPSController
+  class Inputs
+  class PlayerHitbox
 }
 
 ' ─────────────────────────────────────────
@@ -261,103 +91,16 @@ package "Character.Player" #E8F8FF {
 ' ─────────────────────────────────────────
 package "Character.Enemy" #FFF0E8 {
 
-  enum EnemyState {
-    ALIVE
-    PATROL
-    HUNT
-    ENGAGE
-    SEEK
-    SEEK_GUARD
-    DEAD
-  }
+  enum EnemyState
+  enum TroopState
 
-  enum TroopState {
-    ATTACK
-    DEFEND
-    PATROL
-  }
-
-  class EnemyController {
-    +int MaxHealth
-    +bool IsAlly
-    +float RespiteTime
-    +float TurningSpeed
-    +TroopController Troop
-    +GenericWeapon currentWeapon
-    +Transform RotatingTransform
-    +Animator NpcAnimator
-    +EnemyWeaponHandler WpnHandler
-    +GameObject corpseObject
-    +EnemyState Enemy_State
-    +GameObject ActiveTarget
-    -int _health
-    -AStarGrid _aStarGrid
-    -List<Path> _activeRoute
-    -Task _activeMovementTask
-    --
-    +void SpotPlayer(GameObject player)
-    +void OnTakeDamage(DamageInfo damage)
-    +void BeAlerted(Vector3 position)
-    +bool isObjectEnemy(GameObject obj)
-    +Task CalculatePathExternal(Vector3 pos)
-    -Task FollowRoutine()
-    -Task SearchForPlayer()
-    -void Die()
-    -IEnumerator ScanForEnemies()
-  }
-
-  class EnemyWeaponHandler {
-    +Transform Target
-    +float RespiteTime
-    +EnemyController npc
-    +Animator NpcAnimator
-    +TimelineManager Timelines
-    -GenericWeapon[] _weapons
-    -GenericWeapon _selectedWeapon
-    -int _selectedIndex
-    -bool _fireTimeElapsed
-    --
-    +void Attack(Transform player)
-    +Vector3? NextMovementAction()
-    -void AdaptToPlayer()
-    -IEnumerator AttackEnemy(Vector3 enemyPos)
-    -void SwitchWeapon(int index)
-  }
-
-  class EnemyEntity {
-    --
-    +void QueueFree()
-  }
-
-  class LineOfSight {
-    +EnemyController npc
-    -List<Collider> _collidersOnProbation
-    -List<WeakReference<GameObject>> _currentTargets
-    --
-    +bool CheckIfClosestEnemy(GameObject player)
-    +void TriggerEnter(Collider other)
-    +void TriggerExit(Collider other)
-    +void TriggerStay(Collider other)
-    -bool CheckIfInLOS(Collider other)
-    -void DeallocateDead()
-  }
-
-  class NPCHearingManager {
-    -{static} int STEP
-    -int _stepCount
-    --
-    +void MakeSound(Vector3 position, float radius)
-  }
-
-  class TroopController {
-    +TroopState Troop_State
-    -List<EnemyController> _troopers
-    -WeakReference<TroopController> _enemyTroop
-    --
-    -void AttackPositions()
-    -void DefendPositions()
-    -void SpotEnemy(EnemyController controller)
-  }
+  class EnemyController
+  class EnemyWeaponHandler
+  class EnemyEntity
+  class LineOfSight
+  class NPCHearingManager
+  class TroopController
+  class CoverBarricade
 }
 
 ' ─────────────────────────────────────────
@@ -365,40 +108,9 @@ package "Character.Enemy" #FFF0E8 {
 ' ─────────────────────────────────────────
 package "Character.Pathfinding" #F0FFF8 {
 
-  class Path {
-    +int pos_x
-    +int pos_y
-    +Vector3 realPos
-    +double g
-    +Path next
-    +bool arrived
-    +bool dirty
-    --
-    +Vector2Int GetPos()
-    +Path(Path path)
-    +Path(int x, int y, Vector3 realPos, double g, Path next, bool arrived)
-  }
-
-  class AStarGrid {
-    +LayerMask WorldMapMask
-    +Vector3 MapSize
-    +Vector2Int MapCellNum
-    -{static} float NAVMESH_OBSTACLE_PENALTY
-    -Dictionary<Vector2Int,Path> _paths
-    -Vector2Int MapRatio
-    -Vector3 MapStart
-    --
-    +Task<List<Path>> GetPath(Vector3 pos, Vector3 goal)
-    -void GetDistances()
-    -double Distance(Vector2Int pos, Vector2Int goal)
-    -Path ComputePath(List<Path> pathList, int depth, double g, Vector2Int pos, Vector2Int goal)
-  }
-
-  class AssignRoutines {
-    -TaskCompletionSource<bool> hasLoaded
-    --
-    +void AssignRoutine()
-  }
+  class Path
+  class AStarGrid
+  class NPCRoutine
 }
 
 ' ═══════════════════════════════════════════
@@ -412,61 +124,70 @@ Interactable        <|-- WpnPickup
 Interactable        <|-- FlavorText
 Interactable        <|-- CutsceneTrigger
 
-' --- Global references ---
-KeyTimelinePair     --> TimelineID
+' --- Global ---
+KeyTimelinePair     -->  TimelineID
+HistoricalEvent     -->  HistoricalEventType
 
 ' --- Cutscene structure ---
-Cutscene            "1" *-- "many" CutscenePart      : parts
-Cutscene            "1" *-- "many" CutsceneAction     : actions
+Cutscene            "1" *-- "many" CutscenePart
+Cutscene            "1" *-- "many" CutsceneAction
 CutsceneAction      -->  CutsceneActionType
-CutsceneManager     -->  Cutscene                     : currentCutscene
-CutsceneManager     -->  LevelUIManager               : _uiCanvas
-CutsceneTrigger     -->  CutsceneManager              : manager
-
-' --- Timeline ---
-TimelineManager     "1" *-- "many" KeyTimelinePair    : timelines
+CutsceneManager     -->  Cutscene
+CutsceneManager     -->  LevelUIManager
+CutsceneTrigger     -->  CutsceneManager
+TimelineManager     "1" *-- "many" KeyTimelinePair
+TimelineManager     ..>  TimelineID                   : <<indexes by>>
 
 ' --- Player ---
-FPSController       -->  GenericWeapon                : _currentWeapon
-FPSController       -->  GenericWpnHolster            : _arsenal
-FPSController       -->  Inputs                       : _inputs
-FPSController       -->  BulletImpact                 : _impact
-FPSController       -->  LevelUIManager               : _uiCanvas
-FPSController       -->  TimelineManager              : timelineManager
+FPSController       -->  GenericWeapon
+FPSController       -->  GenericWpnHolster
+FPSController       -->  Inputs
+FPSController       -->  BulletImpact
+FPSController       -->  LevelUIManager
+FPSController       -->  TimelineManager
+PlayerHitbox        -->  FPSController
+PlayerHitbox        ..>  DamageInfo                   : <<receives>>
 
 ' --- Holster ---
-GenericWpnHolster   "1" o-- "many" GenericWeapon      : _weapons
-GenericWpnHolster   -->  Inputs                       : _inputs
-GenericWpnHolster   -->  FPSController                : _character
+GenericWpnHolster   "1" o-- "many" GenericWeapon
+GenericWpnHolster   -->  Inputs
+GenericWpnHolster   -->  FPSController
 
 ' --- Weapon firing ---
-GenericWeapon       -->  NPCHearingManager            : _hearingManager
+GenericWeapon       -->  NPCHearingManager
 GenericWeapon       ..>  TimelineID                   : <<uses>>
-WeaponMelee         -->  BulletImpact                 : _impact
+WeaponMelee         -->  BulletImpact
 WeaponMelee         ..>  DamageInfo                   : <<creates>>
-WeaponRifle         -->  BulletImpact                 : _impact
+WeaponRifle         -->  BulletImpact
 WeaponRifle         ..>  DamageInfo                   : <<creates>>
 
 ' --- Enemy ---
-EnemyController     -->  EnemyWeaponHandler           : WpnHandler
-EnemyController     -->  GenericWeapon                : currentWeapon
-EnemyController     -->  TroopController              : Troop
-EnemyController     -->  AStarGrid                    : _aStarGrid
+EnemyController     -->  EnemyWeaponHandler
+EnemyController     -->  GenericWeapon
+EnemyController     -->  TroopController
+EnemyController     -->  AStarGrid
 EnemyController     ..>  DamageInfo                   : <<receives>>
-EnemyWeaponHandler  "1" o-- "many" GenericWeapon      : _weapons
-EnemyWeaponHandler  -->  EnemyController              : npc
-EnemyWeaponHandler  -->  TimelineManager              : Timelines
-TroopController     "1" o-- "many" EnemyController   : _troopers
-LineOfSight         -->  EnemyController              : npc
+EnemyWeaponHandler  "1" o-- "many" GenericWeapon
+EnemyWeaponHandler  -->  EnemyController
+EnemyWeaponHandler  -->  TimelineManager
+TroopController     "1" o-- "many" EnemyController
+TroopController     "1" o-- "many" CoverBarricade
+TroopController     ..>  TroopState
+LineOfSight         -->  EnemyController
+EnemyController     ..>  EnemyState
+
+' --- Historical ---
+HistoricalBattleManager -->  TroopController
+HistoricalBattleManager ..>  HistoricalEvent              : <<handles>>
+HistoricalBattleScenario "1" *-- "many" HistoricalEvent
 
 ' --- Pathfinding ---
 Path                -->  Path                         : next
 AStarGrid           ..>  Path                         : <<creates>>
-EnemyController     o--  Path                         : _activeRoute
+EnemyController     o--  Path                         : route
 
 ' --- Interactable callbacks ---
 FlavorText          ..>  FPSController                : <<Interact()>>
 CutsceneTrigger     ..>  FPSController                : <<Interact()>>
 
 @enduml
-

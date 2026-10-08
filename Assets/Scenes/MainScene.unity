@@ -1311,7 +1311,7 @@ MonoBehaviour:
   cubemapMaterial: {fileID: 0}
   sunMaterial: {fileID: 2100000, guid: aeab33f69c199e54794f516d31450ec4, type: 2}
   BattleScenario: {fileID: 11400000, guid: 736b9c2583220b139acd1d70e741997f, type: 2}
-  hora: 06:30
+  hora: 04:30
 --- !u!4 &908567824
 Transform:
   m_ObjectHideFlags: 0
