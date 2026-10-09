@@ -310,6 +310,7 @@ GameObject:
   - component: {fileID: 9135636221505574903}
   - component: {fileID: 4805209966865955154}
   - component: {fileID: 5091107231566671745}
+  - component: {fileID: 8372455445812310669}
   m_Layer: 11
   m_Name: Enemy
   m_TagString: Untagged
@@ -430,8 +431,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 55919ac34a26952479f3fc91f777b2fa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StarterAssets.FirstPersonController
-  MoveSpeed: 4
-  SprintSpeed: 6
+  MoveSpeed: 10
+  SprintSpeed: 20
   RotationSpeed: 50
   SpeedChangeRate: 10
   JumpHeight: 1.2
@@ -488,6 +489,28 @@ MonoBehaviour:
   NpcAnimator: {fileID: 4122495430319911944}
   WpnHandler: {fileID: 195308348359125836}
   corpseObject: {fileID: 8009479257972574234}
+--- !u!195 &8372455445812310669
+NavMeshAgent:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3316356414943621618}
+  m_Enabled: 1
+  m_AgentTypeID: 0
+  m_Radius: 0.5
+  m_Speed: 3.5
+  m_Acceleration: 8
+  avoidancePriority: 50
+  m_AngularSpeed: 120
+  m_StoppingDistance: 0
+  m_AutoTraverseOffMeshLink: 1
+  m_AutoBraking: 1
+  m_AutoRepath: 1
+  m_Height: 1
+  m_BaseOffset: 0
+  m_WalkableMask: 4294967295
+  m_ObstacleAvoidanceType: 4
 --- !u!1 &3320575737433213150
 GameObject:
   m_ObjectHideFlags: 0

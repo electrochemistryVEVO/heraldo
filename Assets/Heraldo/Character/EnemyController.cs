@@ -28,7 +28,7 @@ namespace Heraldo.Character
 
     public class EnemyController : MonoBehaviour
     {
-        private static readonly float DIST_THRESHOLD = 0.2f;
+        private static readonly float DIST_THRESHOLD = 0.4f;
         private static readonly int Speed = Animator.StringToHash("speed");
         private static readonly int IsDead = Animator.StringToHash("isDead");
 
@@ -285,14 +285,17 @@ namespace Heraldo.Character
             }
         }
 
-        private void OnDrawGizmos()
+        private void OnDrawGizmosSelected()
         {
             if (_activeRoute is not null)
             {
                 foreach (var path in _activeRoute)
                 {
                     Gizmos.color = _gizmoColor;
-                    if(path.dirty)Gizmos.DrawCube(path.realPos,Vector3.one*4);
+                    if(path.dirty)
+                    {
+                        Gizmos.DrawCube(path.realPos, Vector3.one * 4); 
+                    }
                     Gizmos.color = Color.red;
                     if(path.arrived)Gizmos.DrawSphere(path.realPos,4);
                 }
@@ -303,6 +306,11 @@ namespace Heraldo.Character
                     Gizmos.color = Color.green;
                     Gizmos.DrawSphere(new Vector3(_walkToPoint.Value.x,0,_walkToPoint.Value.y),1);
                 }
+            }
+
+            if (_overdriveRoutine is not null)
+            {
+                Gizmos.DrawWireSphere(_overdriveRoutine.Value.NodeList[0],5f);
             }
         }
 

@@ -7,6 +7,22 @@ using UnityEngine.Splines;
 
 namespace Heraldo.Character.Pathfinding
 {
+
+    public class MetaPath
+    {
+        public double f;
+        public double g;
+        public MetaPath previous;
+        public Path current;
+
+        public MetaPath(double f, double g, MetaPath previous, Path current)
+        {
+            this.f = f;
+            this.g = g;
+            this.previous = previous;
+            this.current = current;
+        }
+    }
     public class Path
     { 
         
@@ -108,7 +124,8 @@ namespace Heraldo.Character.Pathfinding
             double h = Distance(pos,goal);
             return h + g;
         }
-        private Path ComputePath(List<Path> pathList, int depth,double g,Vector2Int pos,Vector2Int goal)
+        
+        /*private Path ComputePath(List<Path> pathList, int depth,double g,Vector2Int pos,Vector2Int goal)
         {
             Path currentPath;
             bool hasPath = _paths.TryGetValue(pos,out currentPath);
@@ -143,7 +160,9 @@ namespace Heraldo.Character.Pathfinding
                 hasPath = _paths.TryGetValue(destination, out destinationPath);
                 if (hasPath)
                 { 
-                    //if(destinationPath.arrived)continue;
+                    //Maximum slope: 45
+                    //if (destinationPath.realPos.y - currentPath.realPos.y > MapRatio.x) continue;
+                    //if(destinationPath.dirty)continue;
                     cost += destinationPath.g;
                     //destinationPath.g = g + cost;
                     destinationPath.next = null;
@@ -176,7 +195,54 @@ namespace Heraldo.Character.Pathfinding
             //currentPath.dirty = false; 
             return currentPath;
         }
+        */
 
+        private void ComputePath(List<Path> pathList, int depth,double g,Vector2Int pos,Vector2Int goal)
+        {
+            SortedDictionary<int, MetaPath> openMap = new();
+            Path begin = _paths[pos];
+            double beginCost = GetCost(begin.g, pos, goal);
+            int lowestCost = Int32.MaxValue;
+            openMap.Add((int)Math.Round(beginCost*100),new MetaPath(beginCost,0,null,begin));
+            int k = MAX_RECURSION_STEPS;
+            while (openMap.Count > 0 && --k>0)
+            {
+                var pair = openMap.First();
+                openMap.Remove(pair.Key);
+                lowestCost = lowestCost < pair.Key ? lowestCost : pair.Key;
+                MetaPath current = pair.Value;
+                if (current.current.GetPos() == goal)
+                {
+                    Path curPath = current.current;
+                    curPath.arrived = true;
+                    while (current.previous is not null)
+                    {
+                        pathList.Insert(pathList.Count,current.current); 
+                        current = current.previous;
+                    }
+                    return;
+                }
+                for (int i = 0; i < 9; i++)
+                {
+                    if (i / 3 == 1 && i % 3 == 1) continue;
+                    Path neighbor;
+                    bool hasPath = _paths.TryGetValue(current.current.GetPos() + new Vector2Int(i / 3-1, i % 3-1), out neighbor);
+                    if(!hasPath)continue;
+                    double g_guess = current.g + GetCost(neighbor.g, current.current.GetPos(), neighbor.GetPos());
+                    double f_neighbor = g_guess + Distance(neighbor.GetPos(), goal);
+                    int i_neighbor = (int)Math.Round(f_neighbor * 100);
+                    if (!openMap.ContainsKey(i_neighbor) || openMap[i_neighbor].g > g_guess)
+                    {
+                        neighbor.dirty = true;
+                        MetaPath metaNeighbor = new MetaPath(f_neighbor, g_guess,
+                            current, neighbor);
+                        openMap[i_neighbor] = metaNeighbor;
+                    }
+                }
+            }
+           
+        }
+        
         void Awake()
         {
             GetDistances();
@@ -223,10 +289,11 @@ namespace Heraldo.Character.Pathfinding
             do
             {
                 List<Path> partialPath = new List<Path>();
-                ComputePath(partialPath, MAX_RECURSION_STEPS, 0, _pos, _goal);
+                ComputePath(partialPath, MAX_RECURSION_STEPS, 0, _pos, _goal); 
                 CompressPath(partialPath);
                 pathList.AddRange(partialPath);
             } while (--maxIter>0 && pathList.Count > 0 && !pathList.Last().arrived);
+            Debug.Log("[A-STAR] Count of nodes in path: "+pathList.Count);
             return pathList;
         }
     }

@@ -350,6 +350,7 @@ MonoBehaviour:
   MaxAmmo: 30
   Damage: 0
   AmmoCount: 30
+  IsAlly: 1
   MaxMinRecoil: {x: 1, y: 4}
   Enabled: 0
   ViewModel: {fileID: 828997778738720807}
@@ -519,6 +520,7 @@ MonoBehaviour:
   MaxAmmo: -1
   Damage: 50
   AmmoCount: -1
+  IsAlly: 1
   MaxMinRecoil: {x: 0.01, y: 0.02}
   Enabled: 0
   ViewModel: {fileID: 7232230376568833879}
@@ -575,6 +577,7 @@ MonoBehaviour:
   MaxAmmo: 30
   Damage: 100
   AmmoCount: 30
+  IsAlly: 1
   MaxMinRecoil: {x: 0.01, y: 0.05}
   Enabled: 0
   ViewModel: {fileID: 6072836801981648099}
@@ -1497,8 +1500,16 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8616685848737228371, guid: c5efc39a8aaf6e64ea40e9ad573e9b47, type: 3}
+      propertyPath: MoveSpeed
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8616685848737228371, guid: c5efc39a8aaf6e64ea40e9ad573e9b47, type: 3}
       propertyPath: m_Enabled
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8616685848737228371, guid: c5efc39a8aaf6e64ea40e9ad573e9b47, type: 3}
+      propertyPath: SprintSpeed
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 8616685848737228371, guid: c5efc39a8aaf6e64ea40e9ad573e9b47, type: 3}
       propertyPath: GroundLayers.m_Bits
@@ -1630,7 +1641,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Heraldo.Character.FPSController
   CrouchSpeed: 2
-  CrouchGroundOffset: 0.8
+  CrouchGroundOffset: 1.2
   ProneSpeed: 0.5
   ProneGroundOffset: 0
   GroundOffset: 1.375
