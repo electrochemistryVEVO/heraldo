@@ -74,7 +74,7 @@ namespace Heraldo.Character.Enemy
                         }
                         else _currentTargets.Remove(weakRef);
                     }
-
+                    Debug.Log("[LINE-OF-SIGHT] Object "+other.name + " left line of sight");
                     if (_currentTargets.Count <= 0)
                         npc.Enemy_State = EnemyState.HUNT;
                     //SearchForPlayer(other.transform.position);

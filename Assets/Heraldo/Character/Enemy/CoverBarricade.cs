@@ -14,13 +14,15 @@ namespace Heraldo.Character.Enemy
         public int index;
         //public bool taken;
         [CanBeNull] public EnemyController occupier;
+        [CanBeNull] public CoverBarricade coverBarricade;
 
-        public Spot(Vector3 position,int index)
+        public Spot(CoverBarricade coverBarricade, Vector3 position,int index)
         {
             this.position = position;
             this.index = index;
             //this.taken = false;
             this.occupier = null;
+            this.coverBarricade = coverBarricade;
         }
     }
     public class CoverBarricade : MonoBehaviour
@@ -34,7 +36,7 @@ namespace Heraldo.Character.Enemy
         {
             List<Transform> positions = spots.GetComponentsInChildren<Transform>().ToList();
             positions.Remove(spots);
-            _spotPositions = positions.Select((val,index) => new Spot(val.position,index)).ToArray();
+            _spotPositions = positions.Select((val,index) => new Spot(this,val.position,index)).ToArray();
         }
 
         public string GetCoverBarricadeId()
@@ -54,9 +56,9 @@ namespace Heraldo.Character.Enemy
 
         public void SetSpotOccupier(EnemyController npc, int index)
         {
-            Debug.Log("[SET-SPOT-OCCUPIER] "+GetFreeSpotId(index));
-            Debug.Log("[SET-SPOT-OCCUPIER] Is npc null? " + (npc.IsUnityNull() ? "YES" : "NO"));
-            Debug.Log("[SET-SPOT-OCCUPIER] Was occupier null? "+ (_spotPositions[index].occupier.IsUnityNull()?"YES":"NO") );
+            //Debug.Log("[SET-SPOT-OCCUPIER] "+GetFreeSpotId(index));
+            //Debug.Log("[SET-SPOT-OCCUPIER] Is npc null? " + (npc.IsUnityNull() ? "YES" : "NO"));
+           // Debug.Log("[SET-SPOT-OCCUPIER] Was "+GetFreeSpotId(index)+" null? "+ (_spotPositions[index].occupier.IsUnityNull()?"YES":"NO")) ;
             _spotPositions[index].occupier = npc;
         }
 
@@ -75,6 +77,8 @@ namespace Heraldo.Character.Enemy
                 }
                 );
             if (_index<0) throw new Exception("No existen puntos disponibles en este cover");
+            //Debug.Log("[CLOSEST-SPOT] "+GetFreeSpotId(_index));
+            //Debug.Log("[CLOSEST-SPOT] Is "+ GetFreeSpotId(_index) +" null? "+(_spotPositions[_index].occupier.IsUnityNull()?"YES":"NO"));
             //index = _index;
             return _spotPositions[_index];
         }

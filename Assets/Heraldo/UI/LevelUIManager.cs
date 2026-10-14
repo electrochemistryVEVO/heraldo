@@ -21,6 +21,7 @@ namespace Heraldo.UI
         public TMP_Text cutsceneText;
         public TMP_Text ammoCountText;
         public TMP_Text healthText;
+        public TMP_Text dayTimeText;
         public Image ammoLoad;
         public Image blackFadePanel;
         
@@ -88,6 +89,11 @@ namespace Heraldo.UI
                 ammoCountText.text = _num==0?"No ammo!":_num<0?"Melee weapon":"Ammo Count: "+num;
             } 
             else Debug.Log("Invalid ammo quantity");
+        }
+
+        public void DayTimeText(string timeText)
+        {
+            dayTimeText.text = timeText;
         }
 
         public void HealthText(string num = "")

@@ -350,6 +350,7 @@ MonoBehaviour:
   MaxAmmo: 30
   Damage: 0
   AmmoCount: 30
+  IsAlly: 1
   MaxMinRecoil: {x: 1, y: 4}
   Enabled: 0
   ViewModel: {fileID: 828997778738720807}
@@ -384,9 +385,9 @@ Transform:
   m_GameObject: {fileID: 6549301539762492670}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.6777, z: 0}
-  m_LocalScale: {x: 1, y: 0.648689, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalPosition: {x: 0, y: 1.43, z: 0}
+  m_LocalScale: {x: 4.5, y: 2.9191003, z: 4.5}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 3023563333338495872}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -519,6 +520,7 @@ MonoBehaviour:
   MaxAmmo: -1
   Damage: 50
   AmmoCount: -1
+  IsAlly: 1
   MaxMinRecoil: {x: 0.01, y: 0.02}
   Enabled: 0
   ViewModel: {fileID: 7232230376568833879}
@@ -572,9 +574,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Heraldo.Weapon.WeaponRifle
   ReloadTime: 4
   Range: 900
-  MaxAmmo: 30
+  MaxAmmo: 5
   Damage: 100
-  AmmoCount: 30
+  AmmoCount: 5
+  IsAlly: 1
   MaxMinRecoil: {x: 0.01, y: 0.05}
   Enabled: 0
   ViewModel: {fileID: 6072836801981648099}
@@ -1464,6 +1467,26 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 13
       objectReference: {fileID: 0}
+    - target: {fileID: 5393215578589016641, guid: c5efc39a8aaf6e64ea40e9ad573e9b47, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 4.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5393215578589016641, guid: c5efc39a8aaf6e64ea40e9ad573e9b47, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 4.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5393215578589016641, guid: c5efc39a8aaf6e64ea40e9ad573e9b47, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 4.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5393215578589016641, guid: c5efc39a8aaf6e64ea40e9ad573e9b47, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 2.48
+      objectReference: {fileID: 0}
+    - target: {fileID: 5393215578589016641, guid: c5efc39a8aaf6e64ea40e9ad573e9b47, type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5393215578589016642, guid: c5efc39a8aaf6e64ea40e9ad573e9b47, type: 3}
       propertyPath: m_Layer
       value: 13
@@ -1477,8 +1500,16 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8616685848737228371, guid: c5efc39a8aaf6e64ea40e9ad573e9b47, type: 3}
+      propertyPath: MoveSpeed
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8616685848737228371, guid: c5efc39a8aaf6e64ea40e9ad573e9b47, type: 3}
       propertyPath: m_Enabled
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8616685848737228371, guid: c5efc39a8aaf6e64ea40e9ad573e9b47, type: 3}
+      propertyPath: SprintSpeed
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 8616685848737228371, guid: c5efc39a8aaf6e64ea40e9ad573e9b47, type: 3}
       propertyPath: GroundLayers.m_Bits
@@ -1591,6 +1622,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Heraldo.Character.PlayerHitbox
   controller: {fileID: 2258079821073880130}
+  crouchHitbox: {fileID: 3637004146128788194}
 --- !u!1 &2503449960309662010 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8616685848737228372, guid: c5efc39a8aaf6e64ea40e9ad573e9b47, type: 3}
@@ -1609,10 +1641,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Heraldo.Character.FPSController
   CrouchSpeed: 2
-  CrouchGroundOffset: 0.8
+  CrouchGroundOffset: 1.2
   ProneSpeed: 0.5
   ProneGroundOffset: 0
   GroundOffset: 1.375
+  IsCrouched: 0
   InteractRadius: 0
   HumanoidLeftGrip: {fileID: 8728388739163332379}
   CharacterAnimator: {fileID: 4950907436249451165}
