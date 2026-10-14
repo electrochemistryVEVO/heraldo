@@ -574,9 +574,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Heraldo.Weapon.WeaponRifle
   ReloadTime: 4
   Range: 900
-  MaxAmmo: 30
+  MaxAmmo: 5
   Damage: 100
-  AmmoCount: 30
+  AmmoCount: 5
   IsAlly: 1
   MaxMinRecoil: {x: 0.01, y: 0.05}
   Enabled: 0

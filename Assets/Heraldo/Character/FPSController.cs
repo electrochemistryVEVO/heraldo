@@ -193,6 +193,10 @@ namespace Heraldo.Character
             //Corpse pickups (later)
         }
         //Recoger armas
+        public int PickupWeapon(int ammoCount,int weaponIndex)
+        {
+            return _arsenal.PickupWeapon(ammoCount,weaponIndex);
+        }
         private void Pickup()
         {
             GameObject obj;
@@ -202,17 +206,7 @@ namespace Heraldo.Character
                 Debug.Log("Interactable: " + obj.name);
                 //Debug.Log("Picked up " + obj.name);
                 var wpn = obj.GetComponent<Interactable>();
-                if (wpn is WpnPickup)
-                {
-                    var _wpn = (WpnPickup)wpn;
-                    _arsenal.PickupWeapon(_wpn.AmmoCount,_wpn.WeaponIndex);
-                }
-                else
-                {
-                    wpn.Interact(this);
-                }
-                Destroy(obj);
-                //TODO: Automatically change to correct weapon index
+                wpn.Interact(this);
             }
             else Debug.Log("No interactable");
         }

@@ -8,6 +8,7 @@ using Heraldo.Global.Structs;
 using Newtonsoft.Json;
 using OpenCover.Framework.Model;
 using UnityEngine;
+using UnityEngine.AI;
 using File = System.IO.File;
 
 namespace Heraldo.Character.Enemy
@@ -84,8 +85,7 @@ namespace Heraldo.Character.Enemy
                 .Where((val) => val.HasFreeSpots())
                 .Select((val)=>val.ClosestSpot(pos)).ToArray();
             if (spots.Length == 0) throw new Exception("No spots found");
-            int indClosest = -1;
-            Debug.Log("checkpoint 1");
+            int indClosest = -1; 
             CoverBarricade closest = null;
             Spot result = spots.Aggregate(new Spot(null,Vector3.negativeInfinity,-1),
                 (acum, val) =>
@@ -93,8 +93,7 @@ namespace Heraldo.Character.Enemy
                     if((acum.position - pos).magnitude < (val.position - pos).magnitude) return acum;
                     closest = val.coverBarricade;
                     return val;
-                });
-            Debug.Log("checkpoint 2");
+                }); 
             if(closest is not null)
             {
                 //Debug.Log("[POSITION-CLOSEST] "+closest.GetFreeSpotId(result.index));
@@ -115,7 +114,8 @@ namespace Heraldo.Character.Enemy
                         //await Task.Delay(Mathf.RoundToInt(TrooperRespawnTime));
                         
                         var obj = GameObject.Instantiate(TrooperPrefab, EnemyTroop, false);
-                        obj.transform.position = FindClosestRespawn(pos);
+                        //Nunca codifiques mas en tu vida
+                        obj.GetComponent<NavMeshAgent>().Warp(FindClosestRespawn(pos));
                         //obj.transform.rotation = TrooperRespawnSpot.rotation; 
                         //closest.SetSpotOccupier(obj.GetComponent<EnemyController>(),result.index);
                         EnemyController _nme = obj.GetComponent<EnemyController>();

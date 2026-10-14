@@ -26,7 +26,8 @@ namespace Heraldo.Character.Enemy
         private void Awake()
         {
             _weapons = GetComponentsInChildren<GenericWeapon>();
-            SwitchWeapon(0);
+            _selectedWeapon = _weapons[_selectedIndex];
+            //SwitchWeapon(0);
         }
 
         public void Attack(Transform player)
@@ -37,7 +38,11 @@ namespace Heraldo.Character.Enemy
             {
                 if ((transform.position - player.position).magnitude <= _selectedWeapon.Range)
                     StartCoroutine(AttackEnemy(player.position));
-                else npc.WalkToPoint(new Vector2(player.position.x,player.position.z));
+                else
+                {
+                    Debug.Log("[WEAPON-HANDLER] "+npc.name+" cambia WalkToPoint a "+player.position);
+                    npc.WalkToPoint(new Vector2(player.position.x, player.position.z));
+                }
             }
         }
 

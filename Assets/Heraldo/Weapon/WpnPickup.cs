@@ -1,3 +1,4 @@
+using Heraldo.Character;
 using Heraldo.Flavor;
 using UnityEngine;
 
@@ -7,6 +8,10 @@ namespace Heraldo.Weapon
     {
         public int WeaponIndex;
         public int AmmoCount;
-        
+        public override void Interact(FPSController controller)
+        {
+            controller.PickupWeapon(AmmoCount,WeaponIndex);
+            Destroy(gameObject);
+        }
     }
 }

@@ -76,16 +76,20 @@ namespace Heraldo.Weapon.Holster
             }
         }
 
-        public void PickupWeapon(int ammoCount,int wpnIndex)
+        public int PickupWeapon(int ammoCount,int wpnIndex)
         {
-            _weapons[wpnIndex].AmmoCount = Math.Min(_weapons[wpnIndex].AmmoCount + ammoCount, _weapons[wpnIndex].MaxAmmo); 
+            //Regresa cantidad de municion que ha recogido de verdad
+            int realAmmoCount = _weapons[wpnIndex].AmmoCount;
+            _weapons[wpnIndex].AmmoCount = Math.Min(_weapons[wpnIndex].AmmoCount + ammoCount, _weapons[wpnIndex].MaxAmmo);
+            realAmmoCount = _weapons[wpnIndex].AmmoCount - realAmmoCount;
             Debug.Log("Picked up ammo: " + ammoCount);
             if (_last_wpn_index != wpnIndex)
             {
                 _last_wpn_index = wpnIndex;
                 Hold();
                 Draw();
-            }
+            } 
+            return realAmmoCount;
         }
 
         void Hold()
