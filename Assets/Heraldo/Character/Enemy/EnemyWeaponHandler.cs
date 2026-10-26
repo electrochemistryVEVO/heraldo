@@ -66,12 +66,15 @@ namespace Heraldo.Character.Enemy
         }
         
         IEnumerator AttackEnemy(Vector3 enemyPos)
-        {
-            _fireTimeElapsed = false;
-            Timelines.timelineDict[_selectedWeapon.ShootTimelineId()].Play();
-            _selectedWeapon.Fire(transform.position,enemyPos - transform.position); 
-            yield return new WaitForSeconds(_selectedWeapon.ReloadTime + RespiteTime);
-            _fireTimeElapsed = true;
+        { 
+            bool fired = _selectedWeapon.Fire(transform.position,enemyPos - transform.position);
+            if (fired)
+            {
+                _fireTimeElapsed = false;
+                Timelines.timelineDict[_selectedWeapon.ShootTimelineId()].Play();
+                yield return new WaitForSeconds(_selectedWeapon.ReloadTime + RespiteTime);
+                _fireTimeElapsed = true;
+            }
         }
 
         public void SwitchWeapon(int index)

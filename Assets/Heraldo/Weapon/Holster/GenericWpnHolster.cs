@@ -34,6 +34,12 @@ namespace Heraldo.Weapon.Holster
         private FPSController _character;
         private Animator _charAnimator;
         
+        //Corpse carrying
+        public GameObject corpsePrefab;
+        private WeaponCorpse _corpse;
+        private bool _holdingCorpse = false;
+        private bool _prevHolster = false;
+        
          
         
         //Debounce values
@@ -44,6 +50,7 @@ namespace Heraldo.Weapon.Holster
             _inputs = GetComponentInParent<Inputs>();
             _character = GetComponentInParent<FPSController>();
             _weapons = GetComponentsInChildren<GenericWeapon>();
+            _corpse = GetComponentInChildren<WeaponCorpse>();
             _charAnimator = _character.CharacterAnimator;
             //Debug.Log(_weapons.Length);
             //_holsters = new Holster[3];
@@ -51,29 +58,40 @@ namespace Heraldo.Weapon.Holster
 
         public void Update()
         {
-            //Debug.Log("Holster: " + _inputs.holster);
-            if (_inputs.holster && _nullWpn)
+            if (!_holdingCorpse)
             {
-                //Holster
-                Hold();
-                _nullWpn = false;
-            }
+                //Debug.Log("Holster: " + _inputs.holster);
+                if (_inputs.holster && _nullWpn)
+                {
+                    //Holster
+                    Hold();
+                    _nullWpn = false;
+                }
 
-            if (!_inputs.holster && !_nullWpn)
-            {
-                //Draw
-                Draw();
-                _nullWpn = true;
-            }
+                if (!_inputs.holster && !_nullWpn)
+                {
+                    //Draw
+                    Draw();
+                    _nullWpn = true;
+                }
 
-            if (_inputs.selectedWeapon != _last_wpn_index)
-            {
-                Debug.Log("wpn "+_inputs.selectedWeapon+" selected");
-                //TODO: Animations in and out 
-                _last_wpn_index = _inputs.selectedWeapon;
-                Hold();
-                Draw();
+                if (_inputs.selectedWeapon != _last_wpn_index)
+                {
+                    Debug.Log("wpn "+_inputs.selectedWeapon+" selected");
+                    //TODO: Animations in and out 
+                    _last_wpn_index = _inputs.selectedWeapon;
+                    Hold();
+                    Draw();
+                }
             }
+            else
+            {
+                if (_inputs.holster != _prevHolster)
+                {
+                    DropCorpse();
+                }
+            }
+            _prevHolster = _inputs.holster;
         }
 
         public int PickupWeapon(int ammoCount,int wpnIndex)
@@ -92,6 +110,24 @@ namespace Heraldo.Weapon.Holster
             return realAmmoCount;
         }
 
+        public void HoldCorpse()
+        {
+            //Switch to corpse
+            _holdingCorpse = true;
+            Hold();
+            _character.EquipWeapon(_corpse); 
+        }
+
+        public void DropCorpse()
+        {
+            //Generate element to pick up again
+            _holdingCorpse = false;
+            GameObject obj = Instantiate(corpsePrefab);
+            obj.transform.position = _character.transform.TransformPoint(Vector3.forward * 10);
+            Hold();
+            Draw();
+        }
+
         void Hold()
         {
             //Debug.Log("Weapon holstered: "+_last_wpn_index);
@@ -104,8 +140,7 @@ namespace Heraldo.Weapon.Holster
             //Debug.Log("Weapon drawn: "+_last_wpn_index);
             _charAnimator.SetBool(WpnEquipped,true);
             _charAnimator.SetInteger(WpnSelected,_last_wpn_index);
-            _character.EquipWeapon(_weapons[_last_wpn_index]);
-           
+            _character.EquipWeapon(_weapons[_last_wpn_index]); 
         }
     }
 }

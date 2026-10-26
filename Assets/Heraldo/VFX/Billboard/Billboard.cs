@@ -49,11 +49,22 @@ namespace Heraldo.VFX.Billboard
             Vector3 b = new Vector3(a.x, a.y + sizeOnScreen, a.z);
 
             Vector3 aa = _camera.ScreenToWorldPoint(a);
-            Vector3 bb = _camera.ScreenToWorldPoint(b); 
-             
-            text.rectTransform.localScale = Vector3.one * (aa-bb).magnitude;
-            
-            //text.transform.localScale = Vector3.one*MathF.Sqrt(dist);
+            Vector3 bb = _camera.ScreenToWorldPoint(b);
+
+            //float worldHeight = (aa - bb).magnitude;
+            float _distance = Vector3.Dot(
+                transform.position - _camera.transform.position,
+                _camera.transform.forward
+            ); 
+            //_distance = Mathf.Max(_distance, _camera.nearClipPlane);
+ 
+            float worldHeight = sizeOnScreen *
+                                (2f * _distance *
+                                 Mathf.Tan(_camera.fieldOfView * 0.5f * Mathf.Deg2Rad)) /
+                                _camera.pixelHeight; 
+           // text.rectTransform.localScale = Vector3.one * worldHeight;
+           transform.localScale = Vector3.one * worldHeight;
+           //text.transform.localScale = Vector3.one*MathF.Sqrt(dist);
         }
     }
 }

@@ -9,5 +9,8 @@ namespace Heraldo.Global.Structs
         public int time;
         public HistoricalEventType eventType;
         public int wpnIndex;
+        public ObjectiveID objective;
+        public bool completed;
+        public string newLosingScene;
     }
 }

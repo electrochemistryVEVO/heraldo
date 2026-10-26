@@ -6,6 +6,10 @@ namespace Heraldo.Character.Enemy
 {
     public class LineOfSight : MonoBehaviour
     {
+        //Frames before enemy goes hunting
+        static private int MERCY_FRAMES = 60;
+        private int _mercyFrames = MERCY_FRAMES;
+        
         private List<Collider> _collidersOnProbation;
         private List<WeakReference<GameObject>> _currentTargets; //Ordenado por prioridad (cual esta mas cerca)
 
@@ -33,13 +37,13 @@ namespace Heraldo.Character.Enemy
             //transform.parent.parent.SendMessage("TriggerEnter",other);
         }
         
-        private bool CheckIfInLOS(Collider other)
+        private bool CheckIfInLOS(GameObject other)
         {
             Vector3 pos = transform.parent.position;
-            Vector3 dist = other.gameObject.transform.position - pos;
+            Vector3 dist = other.transform.position - pos;
             RaycastHit hit;
             bool wasHit = Physics.Raycast(pos,dist.normalized, out hit,dist.magnitude,LayerMask.GetMask("Default"));
-            return !wasHit || hit.collider.gameObject == other.gameObject;
+            return !wasHit || hit.collider.gameObject == other;
         }
 
         private void Awake()
@@ -50,6 +54,14 @@ namespace Heraldo.Character.Enemy
         private void Update()
         {
             //DeallocateDead();
+            if (npc.Enemy_State == EnemyState.ENGAGE)
+            {
+                if (--_mercyFrames <= 0)
+                {
+                    _mercyFrames = MERCY_FRAMES;
+                    npc.Enemy_State = EnemyState.HUNT;
+                }
+            }
         }
 
         public void TriggerExit(Collider other)
@@ -60,11 +72,13 @@ namespace Heraldo.Character.Enemy
             {
                 if (npc.isObjectEnemy(other.gameObject))
                 {
-                    foreach (var weakRef in _currentTargets)
+                    int count = _currentTargets.Count;
+                    for (int i=0;i<count;i++)
                     {
+                        var weakRef = _currentTargets[i];
                         GameObject _target;
                         bool hasTarget = weakRef.TryGetTarget(out _target);
-                        if (hasTarget && _target!=null)
+                        if (hasTarget && _target !=null)
                         {
                             if (_target == other.gameObject)
                             {
@@ -72,10 +86,13 @@ namespace Heraldo.Character.Enemy
                                 break;
                             }
                         }
-                        else _currentTargets.Remove(weakRef);
+                        else
+                        {
+                            _currentTargets.Remove(weakRef);
+                            count--;
+                        }
                     }
-                    Debug.Log("[LINE-OF-SIGHT] Object "+other.name + " left line of sight");
-                    if (_currentTargets.Count <= 0)
+                    if (_currentTargets.Count <= 0  && npc.Enemy_State == EnemyState.ENGAGE)
                         npc.Enemy_State = EnemyState.HUNT;
                     //SearchForPlayer(other.transform.position);
                 }
@@ -88,7 +105,10 @@ namespace Heraldo.Character.Enemy
             if (npc.isObjectEnemy(other.gameObject))
             {
                 //Debug.Log("Enemy spotted: "+other.gameObject.name);
-                _currentTargets.Add(new WeakReference<GameObject>(other.gameObject));
+                lock (_currentTargets)
+                { 
+                    _currentTargets.Add(new WeakReference<GameObject>(other.gameObject));
+                }
             }
         }
         
@@ -96,10 +116,12 @@ namespace Heraldo.Character.Enemy
         {
             if (!this.enabled) return;
             if (npc.isObjectEnemy(other.gameObject) 
-                && CheckIfInLOS(other)
+                && CheckIfInLOS(other.gameObject)
                 && CheckIfClosestEnemy(other.gameObject)
                 )
             {
+                //Reset mercy frames
+                _mercyFrames = MERCY_FRAMES;
                 npc.SpotPlayer(other.gameObject);
             }
             //else TriggerExit(other); //Debe de haber una manera mas efectiva de hacer esto
@@ -108,43 +130,30 @@ namespace Heraldo.Character.Enemy
         public bool CheckIfClosestEnemy(GameObject player)
         { 
             //Check if this enemy is the closest
-            foreach (var weakRef in _currentTargets)
+            lock (_currentTargets)
             {
-                GameObject closestEnemy;
-                bool hasClosestEnemy = weakRef.TryGetTarget(out closestEnemy);
-                if (hasClosestEnemy && closestEnemy != null)
+                int count = _currentTargets.Count;
+                for (int i=0;i<count;i++)
                 {
-                    if (closestEnemy == player) continue;
-                    if ((transform.position - closestEnemy.transform.position).magnitude
-                        <= (transform.position - player.transform.position).magnitude)
-                        return false;
-                } 
-                else _currentTargets.Remove(weakRef);
+                    var weakRef = _currentTargets[i];
+                    GameObject closestEnemy;
+                    bool hasClosestEnemy = weakRef.TryGetTarget(out closestEnemy);
+                    if (hasClosestEnemy && closestEnemy != null)
+                    {
+                        if (closestEnemy == player) continue;
+                        if ((transform.position - closestEnemy.transform.position).magnitude
+                            <= (transform.position - player.transform.position).magnitude)
+                            return false;
+                    }
+                    else
+                    {
+                        _currentTargets.RemoveAt(i);
+                        count--;
+                    }
+                }
             }
             return true;
             //if(_fireTimeElapsed)StartCoroutine(AttackEnemy(player.transform.position));
-        }
-        
-        private void DeallocateDead()
-        {
-            foreach (var weakRef in _currentTargets)
-            {
-                GameObject _target;
-                bool hasTarget = weakRef.TryGetTarget(out _target);
-                if (!hasTarget || _target ==null)
-                { 
-                    //Debug.Log("Target removed");
-                    _currentTargets.Remove(weakRef);
-                } 
-            }
-            
-            if (_currentTargets.Count <= 0 && npc.Enemy_State == EnemyState.ENGAGE)
-            {
-                //Debug.Log("Does this ever get fired");
-                npc.Enemy_State = EnemyState.HUNT;
-                //SearchForPlayer();
-            } 
-            //SearchForPlayer(other.gameObject);
         }
     }
 }

@@ -8,11 +8,14 @@ namespace Heraldo.Global.Structs
     {
         public Vector3[] NodeList;
         public bool Loopable;
+        //Determines whether routine should be followed regardless of other encounters 
+        public bool Hurry;
 
-        public Routine(Vector3[] nodeList, bool loopable)
+        public Routine(Vector3[] nodeList, bool loopable, bool hurry = true)
         {
             NodeList = nodeList;
             Loopable = loopable;
+            Hurry = hurry;
         }
 
         public static Routine FromGameObject(GameObject obj)

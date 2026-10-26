@@ -72,9 +72,8 @@ namespace Heraldo.Character
             return velocity.magnitude / _controller.SprintSpeed;
         }
 
-        private void Start()
+        private void Awake()
         {
-            
             characterController = GetComponent<CharacterController>();
             _controller = GetComponent<FirstPersonController>();
             _move_speed = _controller.MoveSpeed;
@@ -90,6 +89,13 @@ namespace Heraldo.Character
             _playableFpsShoot = GameObject.FindWithTag("MainCamera").GetComponent<PlayableDirector>();
             _deltaPosFpsArms = _controller.CinemachineCameraTarget.transform.position - FpsArms.position;
             _health = MaxHealth;
+        }
+
+        private void Start()
+        {
+
+            Cursor.visible = false;
+            Cursor.lockState = CursorLockMode.Locked;
             _uiCanvas.HealthText(_health.ToString());
             //_currentWeapon = Weapon.GetComponent<GenericWeapon>();
         }
@@ -155,10 +161,17 @@ namespace Heraldo.Character
                 _shoot_deb = true;
                 if (_currentWeapon !=null)
                 {
-                    _currentWeapon.Fire(_camera.position,_camera.TransformDirection(Vector3.forward),spreadMultiplier);
-                    StartCoroutine(WeaponCooldown(_currentWeapon.ReloadTime));
-                    timelineManager.timelineDict[_currentWeapon.ShootTimelineId()].Play();
-                    _uiCanvas.AmmoText(_currentWeapon.AmmoCount.ToString()); 
+                    bool fired = _currentWeapon.Fire(_camera.position,_camera.TransformDirection(Vector3.forward),spreadMultiplier);
+                    if (fired)
+                    {
+                        TimelineID id = _currentWeapon.ShootTimelineId();
+                        if (id != TimelineID.CANT_SHOOT)
+                        {
+                            StartCoroutine(WeaponCooldown(_currentWeapon.ReloadTime));
+                            timelineManager.timelineDict[id].Play();
+                            _uiCanvas.AmmoText(_currentWeapon.AmmoCount.ToString()); 
+                        }
+                    }
                 }
                 
                 //Debug.Log("Shot!");
@@ -175,7 +188,11 @@ namespace Heraldo.Character
             Collider[] nearWpns = new Collider[MAX_COLLIDERS];
             //Weapon pickups
             int numWpns = Physics.OverlapSphereNonAlloc(transform.position, InteractRadius,nearWpns,_wpnPickupMask);
-            if (numWpns <= 0) return;
+            if (numWpns <= 0)
+            {
+                _uiCanvas.SeeInteractable(null);
+                return;
+            }
             double bestDistance =  double.MaxValue;
             int bestI = 0;
             //Pick up nearest weapon
@@ -189,13 +206,20 @@ namespace Heraldo.Character
                     bestI = i;
                 }
             }
+
+            Interactable interactable = nearWpns[bestI].gameObject.GetComponent<Interactable>();
+            if (interactable)
+            {
+                _uiCanvas.SeeInteractable(interactable.GetDescription());
+            }
             _nearestInteractableRef.SetTarget(nearWpns[bestI].gameObject);
-            //Corpse pickups (later)
         }
         //Recoger armas
         public int PickupWeapon(int ammoCount,int weaponIndex)
         {
-            return _arsenal.PickupWeapon(ammoCount,weaponIndex);
+            int result = _arsenal.PickupWeapon(ammoCount,weaponIndex);
+            _uiCanvas.AmmoText(_currentWeapon.AmmoCount.ToString());
+            return result;
         }
         private void Pickup()
         {
@@ -252,6 +276,11 @@ namespace Heraldo.Character
             //weapon.ViewModel.transform.SetParent(HumanoidLeftGrip);
             _uiCanvas.AmmoText(weapon.AmmoCount.ToString());
             _uiCanvas.ShowHideAmmoText(true);
+        }
+
+        public void PickupCorpse()
+        {
+            _arsenal.HoldCorpse();
         }
     }
 }

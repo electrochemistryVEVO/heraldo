@@ -12,6 +12,7 @@ using StarterAssets;
 using Unity.Properties;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.Serialization;
 using Quaternion = UnityEngine.Quaternion;
 using Random = UnityEngine.Random;
 using Vector2 = UnityEngine.Vector2;
@@ -33,7 +34,7 @@ namespace Heraldo.Character
 
     public class EnemyController : MonoBehaviour
     {
-        private static readonly float DIST_THRESHOLD = 0.4f;
+        private static readonly float DIST_THRESHOLD = 1f;
         private static readonly float DELTA_THRESHOLD = 0.01f;
         private static readonly int MAX_FRAMES_FROZEN = 120;
         
@@ -58,10 +59,9 @@ namespace Heraldo.Character
         private AStarGrid _aStarGrid;
         private NavMeshAgent _agent;
         //private NavMeshObstacle _obstacle;
-        
         private Vector2? _walkToPoint = null;
         private Vector3? _aimAtPoint = null;
-        private GameObject _enemyRoutines; 
+        public GameObject enemyRoutines; 
         private List<WeakReference<GameObject>> _currentTargets; //Ordenado por prioridad (cual esta mas cerca)
         private WeakReference<GameObject> _activeTarget;
         private Task _activeMovementTask;
@@ -80,6 +80,10 @@ namespace Heraldo.Character
         public Guid ID => _id;
 
         private Routine? _overdriveRoutine;
+        
+        private Routine? _currentRoutine;
+        public Routine? CurrentRoutine => _currentRoutine;
+        
         public GameObject ActiveTarget {
             get
             {
@@ -200,11 +204,12 @@ namespace Heraldo.Character
             Enemy_State = EnemyState.ALIVE;
             _inputs = GetComponent<StarterAssetsInputs>();
             _agent = GetComponent<NavMeshAgent>();
+            //_obstacle = GetComponent<NavMeshObstacle>();
             _firstPerson = GetComponent<FirstPersonController>();
             _walkToPoint = Vector2.zero;
             _aStarGrid = GameObject.FindWithTag("AStarGrid").GetComponent<AStarGrid>();
             _pathNodeReached = new TaskCompletionSource<bool>();
-            _enemyRoutines = GameObject.FindWithTag(IsAlly ? "Ally Routines" :"Enemy Routines");
+            //enemyRoutines = GameObject.FindWithTag(IsAlly ? "Ally Routines" :"Enemy Routines");
             _currentTargets = new List<WeakReference<GameObject>>();
             _rotatingObject = new WeakReference<GameObject>(RotatingTransform.gameObject); 
             _prevPos = transform.position;
@@ -229,6 +234,11 @@ namespace Heraldo.Character
                 //_obstacle.carving = false;
                 Vector2 walkToPoint = _walkToPoint.Value;
                 Vector2 move = new Vector2(walkToPoint.x-transform.position.x, walkToPoint.y - transform.position.z );
+                if (move.magnitude > 50f)
+                {
+                    _inputs.sprint = true;
+                }
+                else _inputs.sprint = false;
                 if (move.magnitude <= DIST_THRESHOLD)
                 {
                     _inputs.move = Vector2.zero;
@@ -309,13 +319,13 @@ namespace Heraldo.Character
             //DeallocateDead();
         }
 
-        private Routine? GetClosestRoutine()
+        public Routine? GetClosestRoutine()
         {
             double minDist = Double.MaxValue;
             Transform minRoutine = null;
-            foreach(var routine in _enemyRoutines.GetComponentsInChildren<Transform>())
+            foreach(var routine in enemyRoutines.GetComponentsInChildren<Transform>())
             {
-                if(routine == _enemyRoutines.transform || routine.parent != _enemyRoutines.transform)continue; //Getting rid of parent or grandchildren as a possibility
+                if(routine == enemyRoutines.transform || routine.parent != enemyRoutines.transform)continue; //Getting rid of parent or grandchildren as a possibility
                 double dist = (routine.position - transform.position).magnitude;
                 if (dist < minDist)
                 {
@@ -341,6 +351,8 @@ namespace Heraldo.Character
                 minRoutine = GetClosestRoutine();
                 if (minRoutine == null) return false;
             }
+
+            _currentRoutine = minRoutine;
             Vector3[] steps = minRoutine.Value.NodeList;
             if (steps.Length == 0) return false; 
             int i = 0;
@@ -351,7 +363,17 @@ namespace Heraldo.Character
                 Debug.Log("[FOLLOW-ROUTINE] Current routine of "+name+": "+currentStep);
                 //_walkToPoint = new Vector2(currentStep.position.x,currentStep.position.z);
                 //_aimAtPoint = _walkToPoint; 
-                bool reached = await CalculatePath(currentStep);
+                bool reached;
+                if (j == 0)
+                {
+                    //Solo usar pathfinding para el primero, asumir camino fijo para los otros
+                    reached = await CalculatePath(currentStep);
+                }
+                else
+                {
+                    _walkToPoint = new Vector2(currentStep.x, currentStep.z);
+                    reached = await _pathNodeReached.Task;
+                }
                 _pathNodeReached = new TaskCompletionSource<bool>();
                 //bool reached = await _pathNodeReached.Task; 
                 if (!reached) return false;
@@ -365,11 +387,17 @@ namespace Heraldo.Character
 
         private void OnDrawGizmosSelected()
         {
+            enemyRoutines = GameObject.FindWithTag(IsAlly ? "Ally Routines" :"Enemy Routines");
+            Routine? routine = GetClosestRoutine();
+            if(routine.HasValue)
+                Gizmos.DrawLine(transform.position,routine.Value.NodeList[0]);
+            
             if (_activeRoute is not null)
             {
                 Vector3 prevPathPos = _activeRoute[0].realPos;
                 foreach (var path in _activeRoute)
                 {
+                    if (!path.dirty) continue;
                     Gizmos.color = _gizmoColor;
                     Gizmos.DrawLine(prevPathPos,path.realPos);
                     Gizmos.DrawSphere(path.realPos,5f);
@@ -409,6 +437,12 @@ namespace Heraldo.Character
             //if (Enemy_State != EnemyState.ALIVE) Enemy_State = EnemyState.PATROL;
             Debug.Log("[EXTERNAL-ROUTINE] Trooper: "+name);
             Enemy_State = EnemyState.PATROL; 
+        }
+
+        public void FollowInternalRoutine()
+        {
+            _overdriveRoutine = null;
+            FollowRoutine();
         }
 
         public async Task CalculatePathExternal(Vector3 pos)
@@ -487,7 +521,7 @@ namespace Heraldo.Character
             //_pathNodeReached = new(); 
             if(Enemy_State != EnemyState.ENGAGE)
             {
-                _walkToPoint = null;
+                if (_overdriveRoutine is null || _enemyState == EnemyState.HUNT) _walkToPoint = null;
                 Enemy_State = EnemyState.ENGAGE;
                 WpnHandler.Target = player.transform;
                 AskWeaponHandler().Wait();
@@ -565,10 +599,17 @@ namespace Heraldo.Character
 
         async Task<List<Path>> GetPath(Vector3 goal)
         {
-            int timeoutFrames = 300;
             List<Path> pathList = new();
             try
             {
+                //_obstacle.enabled = false;
+                //_agent.enabled = true; 
+                Debug.Log("[CALCULATE-PATH] "+name+": Entered GetPath");
+                int timeoutFrames = 300;
+                NavMeshHit hit;
+                if (!NavMesh.SamplePosition(goal,out hit,float.MaxValue,NavMesh.AllAreas)) throw new Exception("Destination not reachable");
+                goal = hit.position;
+                
                 //await Awaitable.MainThreadAsync();
                 int i = 10;
                 _agent.destination = goal; 
@@ -577,24 +618,47 @@ namespace Heraldo.Character
 
                 for (; timeoutFrames > 0; timeoutFrames--)
                 {
-                    await Awaitable.EndOfFrameAsync(); 
-                    if (!_agent.pathPending)
+                    await Awaitable.EndOfFrameAsync();
+                    //Debug.Log("[CALCULATE-PATH] "+name+": This is going to tank the framerate");
+                    if (_agent.path.corners.Length > pathList.Count)
                     {
                         pathList = _agent.path.corners.Select(corner => new Path(0, 0, corner, 0))
-                            .ToList(); 
-                        
-                        //Set arrived status
-                        if (_agent.path.status == NavMeshPathStatus.PathComplete) pathList[^1].arrived = true;
-                        else
+                            .ToList();
+                    }
+                    if (!_agent.pathPending)
+                    {
+                        //pathList = _agent.path.corners.Select(corner => new Path(0, 0, corner, 0))
+                        //    .ToList(); 
+                        //Si no tiene mas de 1 esquina, es un parcial que no puedo usar
+                        if (pathList.Count <= 1)
                         {
-                            throw new Exception("Current path is invalid or incomplete");
+                            timeoutFrames--;
+                            continue;
                         }
+                        //Set arrived status
+                        if (_agent.path.status == NavMeshPathStatus.PathComplete)
+                        {
+                            if(Vector3.Distance(pathList[^1].realPos,goal) < DIST_THRESHOLD)
+                                pathList[^1].arrived = true;
+                        }
+                        else
+                        { 
+                            if(_agent.path.status == NavMeshPathStatus.PathInvalid)
+                                throw new Exception("Current path is invalid");
+                        }
+                        Debug.Log("[CALCULATE-PATH] "+name+": "
+                                  +(_agent.path.status == NavMeshPathStatus.PathComplete ? "Arrived " : "Partially arrived ")
+                                  +" GetPath with pathList count = "+pathList.Count);
                         pathList.RemoveAt(0);
                         return pathList;
                     }
                 }
 
-                throw new Exception("Timeout reach for path calculation");
+                if (pathList.Count <= 1)
+                    throw new Exception("Timeout reach for path calculation");
+                Debug.Log("[CALCULATE-PATH] "+name+": Left GetPath with pathList count = "+pathList.Count);
+                pathList.RemoveAt(0);
+                return pathList;
                 //Delete first corner (it's the position of the npc)
 
             }
@@ -606,6 +670,8 @@ namespace Heraldo.Character
             {
                 Debug.LogException(e);
             } 
+            //_agent.enabled = false;
+            //_obstacle.enabled = true;
             return pathList;
         }
 

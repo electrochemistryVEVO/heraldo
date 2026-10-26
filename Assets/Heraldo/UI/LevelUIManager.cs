@@ -16,6 +16,7 @@ namespace Heraldo.UI
         private static readonly int Distance = Shader.PropertyToID("_Distance");
         public Image crosshair;
         public TMP_Text crosshairText;
+        public TMP_Text objectiveText;
         public TMP_Text flavorText;
         public TMP_Text cutsceneActorNameText;
         public TMP_Text cutsceneText;
@@ -28,20 +29,27 @@ namespace Heraldo.UI
         private Color ALLY_COLOR = Color.green;
         private Color ENEMY_COLOR = Color.red;
         private bool showFlavorText = false;
+        private string _losingScene = "Scenes/RetryScreen";
+        
 
         private Material _crosshairMaterial;
         
         public void OnSubjectChange([CanBeNull] GameObject subject,bool isNull=false)
         {
-            if (isNull) crosshairText.text = "";
+            if (isNull) crosshair.color = Color.white;
             else
             {
                 if (subject.layer == LayerMask.NameToLayer("Enemy"))
-                    crosshairText.color = ENEMY_COLOR;
+                    crosshair.color = ENEMY_COLOR;
                 else
-                    crosshairText.color = ALLY_COLOR;
-                crosshairText.text = subject.name;
+                    crosshair.color = ALLY_COLOR;
+                //crosshairText.text = subject.name;
             }
+        }
+
+        public void SeeInteractable([CanBeNull] string str)
+        {
+            crosshairText.text = str ?? "";
         }
 
         private void Awake()
@@ -96,9 +104,19 @@ namespace Heraldo.UI
             dayTimeText.text = timeText;
         }
 
+        public void StopOrResumeDayTimeText(bool resume)
+        {
+            dayTimeText.color = resume ? Color.white : Color.red;
+        }
+
         public void HealthText(string num = "")
         {
-            healthText.text = "Health: " + num;
+            healthText.text = "Salud: " + num;
+        }
+
+        public void ObjectiveText(string obj = "")
+        {
+            objectiveText.text = "Objetivo: " + obj;
         }
 
         public void ShowHideAmmoText(bool show=false)
@@ -136,12 +154,17 @@ namespace Heraldo.UI
             }
 
             Cursor.lockState = CursorLockMode.None;
-            SceneManager.LoadScene("Scenes/RetryScreen");
+            SceneManager.LoadScene(_losingScene);
         }
 
         public void FadeToBlack(float seconds)
         {
             Coroutine c1 = StartCoroutine(_FadeToBlack(seconds));
+        }
+
+        public void ChangeLoseCondition(string scnToLoad)
+        {
+            _losingScene = scnToLoad;
         }
         
     }

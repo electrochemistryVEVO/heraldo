@@ -11,11 +11,12 @@ namespace Heraldo.Weapon
         private BulletImpact _impact;
         static readonly float RIFLE_SHOOT_SOUND_RADIUS = 120.0f;
         private static readonly float RIFLE_LAND_SOUND_RADIUS = 60.0f;
-        
-        void Start()
+
+        public override void Awake()
         {
+            base.Awake();
             _impact = GameObject.FindWithTag("Particle Manager").GetComponent<BulletImpact>();
-        }
+        } 
 
         public override TimelineID ShootTimelineId()
         {

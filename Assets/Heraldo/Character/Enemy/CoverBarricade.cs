@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Heraldo.Global.Enums;
 using JetBrains.Annotations;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -12,7 +13,7 @@ namespace Heraldo.Character.Enemy
         public Vector3 position;
 
         public int index;
-        //public bool taken;
+        //public bool taken; 
         [CanBeNull] public EnemyController occupier;
         [CanBeNull] public CoverBarricade coverBarricade;
 
@@ -28,6 +29,7 @@ namespace Heraldo.Character.Enemy
     public class CoverBarricade : MonoBehaviour
     {
         public Transform spots;
+        public BattlePhase Battle_Phase = BattlePhase.MORRO_ONE;
         public bool IsAlly;
         private Spot[] _spotPositions;
         
@@ -54,12 +56,27 @@ namespace Heraldo.Character.Enemy
             return _spotPositions.Any((val) => val.occupier.IsUnityNull());
         }
 
+        public bool IsInPhase(BattlePhase phase)
+        {
+            //If it's enemy, it has to be higher
+            //If it's ally, it has to be higher
+            return Battle_Phase >= phase;
+        }
+
         public void SetSpotOccupier(EnemyController npc, int index)
         {
             //Debug.Log("[SET-SPOT-OCCUPIER] "+GetFreeSpotId(index));
             //Debug.Log("[SET-SPOT-OCCUPIER] Is npc null? " + (npc.IsUnityNull() ? "YES" : "NO"));
            // Debug.Log("[SET-SPOT-OCCUPIER] Was "+GetFreeSpotId(index)+" null? "+ (_spotPositions[index].occupier.IsUnityNull()?"YES":"NO")) ;
             _spotPositions[index].occupier = npc;
+        }
+
+        public void OnDrawGizmos()
+        {
+            foreach (var child in spots.GetComponentsInChildren<Transform>())
+            {
+                Gizmos.DrawCube(child.position,new Vector3(1f,4f,1f));
+            }
         }
 
         public Spot ClosestSpot(Vector3 point)

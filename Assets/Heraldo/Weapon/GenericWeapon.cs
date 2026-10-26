@@ -30,7 +30,7 @@ namespace Heraldo.Weapon
 
         private bool _isMelee = false;
 
-        public void Awake()
+        public virtual void Awake()
         {
             if (MaxAmmo < 0 || AmmoCount < 0) _isMelee = true;
             _viewModelRenderers = ViewModel.GetComponentsInChildren<Renderer>();
@@ -46,12 +46,18 @@ namespace Heraldo.Weapon
             return Vector3.ProjectOnPlane(new Vector3(spreadSeed.x,spreadSeed.y,0),direction);
         }
 
-        public void Fire(Vector3 position,Vector3 direction,float spreadMultiplier=0)
+        public bool Fire(Vector3 position,Vector3 direction,float spreadMultiplier=0)
         {
-            if (!Enabled) return;
+            if (!Enabled) return false;
             Debug.Log("Ammo: " + AmmoCount);
+            int actualAmmo = AmmoCount;
             if(!_isMelee)AmmoCount = Math.Max(AmmoCount-1,0); 
-            if(AmmoCount>0 || _isMelee) FireAt(position, direction + Spread(direction, spreadMultiplier));
+            if(actualAmmo>0 || _isMelee)
+            {
+                FireAt(position, direction + Spread(direction, spreadMultiplier));
+                return true;
+            }
+            return false;
         }
 
         public void ShowHide(bool show = true)

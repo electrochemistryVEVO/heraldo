@@ -4,6 +4,7 @@ namespace Heraldo.Global.Enums
     {
         FPS_SHOTGUN_SHOOT_RELOAD,
         FPS_MACHETE_SLASH,
-        SOLDADO_SHOTGUN_SHOOT_RELOAD
+        SOLDADO_SHOTGUN_SHOOT_RELOAD,
+        CANT_SHOOT
     }
 }
