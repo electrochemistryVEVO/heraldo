@@ -33,19 +33,30 @@ namespace Heraldo.UI
             Application.Quit();
         }
 
+        private void SaveDataTest()
+        {
+            JsonParser.WriteSaveData(new GameSaveData("Scenes/ScnPhase1"));
+        }
+
         private void Awake()
         {
+            //SaveDataTest();  
+            
+        }
+
+        private void Start()
+        {
+            QuitButton.onClick.AddListener(Quit);
+            StartButton.onClick.AddListener(() => { JsonParser.DeleteSaveData(); LoadLevel(); });
             if (JsonParser.SaveFileExists())
             {
-                ContinueButton.enabled = true;
                 string scn = "Scenes/MainScene";
                 GameSaveData? data = JsonParser.ReadSaveData();
                 if (data.HasValue) scn = data.Value.lastScene;
+                Debug.Log("You can now continue from " + scn);
                 ContinueButton.onClick.AddListener(() => LoadLevel(scn));
             }
-            
-            QuitButton.onClick.AddListener(Quit);
-            StartButton.onClick.AddListener(() => { JsonParser.DeleteSaveData(); LoadLevel(); });
+            else ContinueButton.gameObject.SetActive(false);
         }
     }
 }

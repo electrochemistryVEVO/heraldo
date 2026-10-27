@@ -38,9 +38,11 @@ namespace Heraldo.Global
                     }
                 }
                 //Decrypt data
-                fileData = fileData
+                fileData = new string(fileData
                     .Select((val, ind) => (char)(val ^ password[ind % password.Length]))
-                    .ToArray().ToString();
+                    .ToArray());
+                //Put to output
+                Debug.Log("Raw JSON of save data: "+ fileData);
                 //Parse to object
                 return JsonUtility.FromJson<GameSaveData>(fileData);
             }
@@ -53,18 +55,25 @@ namespace Heraldo.Global
 
         public static async Task WriteSaveData(GameSaveData data)
         {
-            //Jsonify data
-            char[] fileData = JsonUtility.ToJson(data).ToCharArray();
-            //Encrypt data
-            fileData = fileData
-                .Select((val, ind) => (char)(val ^ password[ind % password.Length]))
-                .ToArray();
-            using (FileStream stream = new(GetFullPath(), FileMode.Create))
+            try
             {
-                using (StreamWriter writer = new(stream))
+                //Jsonify data
+                char[] fileData = JsonUtility.ToJson(data).ToCharArray();
+                //Encrypt data
+                fileData = fileData
+                    .Select((val, ind) => (char)(val ^ password[ind % password.Length]))
+                    .ToArray();
+                using (FileStream stream = new(GetFullPath(), FileMode.Create))
                 {
-                    await writer.WriteAsync(fileData);
+                    using (StreamWriter writer = new(stream))
+                    {
+                        await writer.WriteAsync(fileData);
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
             }
         }
 

@@ -12,7 +12,7 @@ namespace Heraldo.VFX.Lighting
 {
     public class DayNightManager : MonoBehaviour
     {
-        private static readonly float SIMULATED_TO_REAL_SECONDS = 2.5f;
+        public float simulatedToRealSeconds = 2.5f;
         
         public Material cubemapMaterial;
         public Material sunMaterial;
@@ -76,10 +76,10 @@ namespace Heraldo.VFX.Lighting
                         _historicalBattleManager.HandleHistoricalEvent(currentEvent);
                     }
 
-                    Task t1 = new Task(() => Awaitable.WaitForSecondsAsync(SIMULATED_TO_REAL_SECONDS));
+                    Task t1 = new Task(() => Awaitable.WaitForSecondsAsync(simulatedToRealSeconds));
                     await Task.WhenAny(new Task[]
                     {
-                        Task.Delay((int)MathF.Round(SIMULATED_TO_REAL_SECONDS * 1000)),
+                        Task.Delay((int)MathF.Round(simulatedToRealSeconds * 1000)),
                         _timeUpdateCancel.Task
                     });
                     if (_stopped)

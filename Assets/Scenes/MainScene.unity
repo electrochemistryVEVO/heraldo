@@ -999,6 +999,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d55199a255941be94fce0054b5009d5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Heraldo.VFX.Lighting.DayNightManager
+  simulatedToRealSeconds: 2.5
   cubemapMaterial: {fileID: 0}
   sunMaterial: {fileID: 2100000, guid: aeab33f69c199e54794f516d31450ec4, type: 2}
   BattleScenario: {fileID: 11400000, guid: 736b9c2583220b139acd1d70e741997f, type: 2}
@@ -1258,7 +1259,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5052114807180870027, guid: 9ce53cb2232d1257b997439da838f385, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -1009.1
+      value: -1012.5
       objectReference: {fileID: 0}
     - target: {fileID: 5052114807180870027, guid: 9ce53cb2232d1257b997439da838f385, type: 3}
       propertyPath: m_LocalPosition.z
@@ -1539,6 +1540,21 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 7495626817993575738, guid: d22e7b4dd27d78cccbf54f03f696717a, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 1243950591743038175, guid: d22e7b4dd27d78cccbf54f03f696717a, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 9042162730522455089, guid: d22e7b4dd27d78cccbf54f03f696717a, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 185125725809390016, guid: d22e7b4dd27d78cccbf54f03f696717a, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 7056970480103278842, guid: d22e7b4dd27d78cccbf54f03f696717a, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 1591191198356745922, guid: d22e7b4dd27d78cccbf54f03f696717a, type: 3}
       insertIndex: -1
       addedObject: {fileID: 0}
   m_SourcePrefab: {fileID: 100100000, guid: d22e7b4dd27d78cccbf54f03f696717a, type: 3}

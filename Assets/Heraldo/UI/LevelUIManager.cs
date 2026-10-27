@@ -154,6 +154,7 @@ namespace Heraldo.UI
             }
 
             Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
             SceneManager.LoadScene(_losingScene);
         }
 

@@ -26,7 +26,9 @@ namespace Heraldo.Level
         {
             if (other.CompareTag("Player") && _objectiveManager.currentObjective.ID == objectiveToFulfill)
             {
-                Task.Run(() => JsonParser.WriteSaveData(new GameSaveData(LevelScene)));
+                if(LevelScene != "Scenes/MainMenu")
+                    JsonParser.WriteSaveData(new GameSaveData(LevelScene));
+                else JsonParser.DeleteSaveData();
                 _uiManager.ChangeLoseCondition(LevelScene);
                 _uiManager.FadeToBlack(2f);
             }

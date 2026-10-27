@@ -37,6 +37,7 @@ namespace Heraldo.Character
         private static readonly float DIST_THRESHOLD = 1f;
         private static readonly float DELTA_THRESHOLD = 0.01f;
         private static readonly int MAX_FRAMES_FROZEN = 120;
+        private static readonly int MAX_ITERATIONS_ROUTINE = 50_000;
         
         private static readonly int Speed = Animator.StringToHash("speed");
         private static readonly int IsDead = Animator.StringToHash("isDead");
@@ -357,7 +358,7 @@ namespace Heraldo.Character
             if (steps.Length == 0) return false; 
             int i = 0;
             int j = 0;
-            while (j<50)
+            while (j<MAX_ITERATIONS_ROUTINE)
             {
                 Vector3 currentStep = steps[i]; 
                 Debug.Log("[FOLLOW-ROUTINE] Current routine of "+name+": "+currentStep);
