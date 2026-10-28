@@ -19,16 +19,14 @@ namespace Heraldo.UI
             Debug.Log("Load level button pressed");
             LoadingScreen.SetActive(true);
             LandingScreen.SetActive(false);
-            SceneManager.LoadSceneAsync(_scnToLoad)!.completed += operation => 
-                LoadingScreen.SetActive(false) ;
+            SceneManager.LoadSceneAsync(_scnToLoad);
         }
 
         void Quit()
         {
             LoadingScreen.SetActive(true);
             LandingScreen.SetActive(false);
-            SceneManager.LoadSceneAsync("Scenes/MainMenu")!.completed += operation => 
-                LoadingScreen.SetActive(false) ;
+            SceneManager.LoadSceneAsync("Scenes/MainMenu");
         }
 
         private void Awake()
@@ -41,6 +39,7 @@ namespace Heraldo.UI
                 if (data.HasValue) scn = data.Value.lastScene;
                 _scnToLoad = scn;
             }
+            else _scnToLoad = "Scenes/MainScene";
             QuitButton.onClick.AddListener(Quit);
             RetryButton.onClick.AddListener(LoadLevel);
         }

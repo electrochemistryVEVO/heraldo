@@ -96,14 +96,19 @@ namespace Heraldo.Character
 
             Cursor.visible = false;
             Cursor.lockState = CursorLockMode.Locked;
-            _uiCanvas.HealthText(_health.ToString());
+            _uiCanvas.HealthText(_health,MaxHealth);
+            _uiCanvas.ShowHideAmmoText();
             //_currentWeapon = Weapon.GetComponent<GenericWeapon>();
         }
 
         public void OnTakeDamage(DamageInfo info)
         {
             _health = Math.Clamp(_health - info.damage, 0, MaxHealth);
-            _uiCanvas.HealthText(_health.ToString());
+            _uiCanvas.HealthText(_health,MaxHealth);
+            if (info.damage > 0)
+            {
+                _uiCanvas.TakeDamage(info.damage,MaxHealth);
+            }
             if (_health <= 0) Die();
         }
 
@@ -169,7 +174,7 @@ namespace Heraldo.Character
                         {
                             StartCoroutine(WeaponCooldown(_currentWeapon.ReloadTime));
                             timelineManager.timelineDict[id].Play();
-                            _uiCanvas.AmmoText(_currentWeapon.AmmoCount.ToString()); 
+                            _uiCanvas.AmmoText(_currentWeapon.AmmoCount); 
                         }
                     }
                 }
@@ -218,7 +223,7 @@ namespace Heraldo.Character
         public int PickupWeapon(int ammoCount,int weaponIndex)
         {
             int result = _arsenal.PickupWeapon(ammoCount,weaponIndex);
-            _uiCanvas.AmmoText(_currentWeapon.AmmoCount.ToString());
+            _uiCanvas.AmmoText(_currentWeapon.AmmoCount);
             return result;
         }
         private void Pickup()
@@ -274,8 +279,9 @@ namespace Heraldo.Character
             weapon.ShowHide();
             StartCoroutine(WeaponCooldown(0.7f));
             //weapon.ViewModel.transform.SetParent(HumanoidLeftGrip);
-            _uiCanvas.AmmoText(weapon.AmmoCount.ToString());
             _uiCanvas.ShowHideAmmoText(true);
+            _uiCanvas.AmmoText(_currentWeapon.AmmoCount);
+            _uiCanvas.WeaponDescriptionText(weapon.Description); 
         }
 
         public void PickupCorpse()

@@ -20,20 +20,37 @@ namespace Heraldo.Level
         public List<ObjectiveZone> objectiveZones;
         private ObjectiveZone _currentZone = null;
         public LevelUIManager uiManager;
-        public DayNightManager dayNightManager;
+        public DayNightManager dayNightManager; 
+        private bool _firstChange;
 
         private void Awake()
         {
+            _firstChange = false;
+        }
+
+        private void Start()
+        {
             if(currentObjective.ID == ObjectiveID.NO_OBJECTIVE)
-                ChangeObjective(objectiveMap.Objectives[0].ID);
-            
+            {
+                currentObjective = objectiveMap.Objectives[0];
+                uiManager.InitObjective(currentObjective);
+            }
         } 
 
-        public void ChangeObjective(ObjectiveID id, Interactable interactable = null)
+        public void ChangeObjective(ObjectiveID id, bool completed = false)
         {
             Debug.Log("[CHANGE-OBJECTIVE] Objetivo cambiado a: "+id);
             currentObjective = objectiveMap.FindObjective(id);
-            uiManager.ObjectiveText(currentObjective.Title);
+            if(completed)uiManager.ShowCompleteObjective(currentObjective);
+            else
+            {
+                if (_firstChange)
+                {
+                    uiManager.InitObjective(currentObjective);
+                    _firstChange = true;
+                }
+                else uiManager.ObjectiveText(currentObjective);
+            }
             positionBillboard.position = currentObjective.Position;
             _currentZone = objectiveZones.Find(val => val.objectiveId == currentObjective.ID);
         }
@@ -53,7 +70,7 @@ namespace Heraldo.Level
         public void CompleteObjective()
         {
             Debug.Log("[CHANGE-OBJECTIVE] Objetivo completado - "+currentObjective.ID);
-            ChangeObjective(currentObjective.nextObjectiveId);
+            ChangeObjective(currentObjective.nextObjectiveId,true);
         }
     }
 }

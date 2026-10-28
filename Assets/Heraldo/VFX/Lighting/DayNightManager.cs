@@ -41,12 +41,13 @@ namespace Heraldo.VFX.Lighting
 
         private void Start()
         {
-            cubemapMaterial = RenderSettings.skybox;
-            RenderSettings.skybox.Lerp(cubemapMaterial,sunMaterial, 0.5f);
+            //cubemapMaterial = RenderSettings.skybox;
+            //RenderSettings.skybox.Lerp(cubemapMaterial,sunMaterial, 0.5f);
             _timeUpdateTask = Task.Run(TimeUpdate);
+            _uiCanvas.DayTimeText(hora);
         }
 
-        int ParseTime(string tim)
+        public static int ParseTime(string tim)
         {
             string[] str = tim.Split(':');
             string hrSplit = str[0];
@@ -82,7 +83,7 @@ namespace Heraldo.VFX.Lighting
                         Task.Delay((int)MathF.Round(simulatedToRealSeconds * 1000)),
                         _timeUpdateCancel.Task
                     });
-                    if (_stopped)
+                    if (_stopped || !Application.isPlaying)
                     {
                         Debug.Log("[TIME-MANAGER] Timer stopped.");
                         return;

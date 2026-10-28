@@ -73,21 +73,11 @@ namespace Heraldo.Character
                 SelectWeapon(1);
                 holster = false;
             }
-        }
-        public void OnWpnSelect3(InputValue value)
-        { 
-            bool enabled;
-            enabledInputMap.TryGetValue("select_weapon", out enabled);
-            if (enabled)
-            {
-                SelectWeapon(2);
-                holster = false;
-            }
-        }
+        } 
 
         public void OnInteract(InputValue value)
         {
-            if (!value.isPressed)
+            if (!value.isPressed && enabledInputMap["pickup"])
             {
                 PickupInput(true);
             }

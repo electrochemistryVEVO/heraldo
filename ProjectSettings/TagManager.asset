@@ -25,7 +25,7 @@ TagManager:
   - Camera_SunOverlay
   - NavObstacle
   - BillboardUI
-  - 
+  - AdorneeUI
   - 
   - Enemy
   - WpnPickup

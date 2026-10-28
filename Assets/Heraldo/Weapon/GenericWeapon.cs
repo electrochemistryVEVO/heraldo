@@ -19,6 +19,7 @@ namespace Heraldo.Weapon
         public bool IsAlly = true;
         public Vector2 MaxMinRecoil;
         public bool Enabled;
+        public string Description;
         public abstract TimelineID ShootTimelineId();
         protected NPCHearingManager _hearingManager;
         

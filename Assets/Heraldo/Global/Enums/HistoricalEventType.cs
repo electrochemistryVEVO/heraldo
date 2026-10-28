@@ -6,6 +6,7 @@ namespace Heraldo.Global.Enums
         NEXT_PHASE,
         CHANGE_OBJECTIVE,
         CHANGE_LOSE_CONDITION,
-        SWITCH_SCENE
+        SWITCH_SCENE,
+        COMPLETE_OBJECTIVE
     }
 }

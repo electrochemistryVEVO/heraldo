@@ -5,6 +5,12 @@ namespace Heraldo.Weapon
 {
     public class WeaponCorpse : GenericWeapon
     {
+        public override void Awake()
+        {
+            base.Awake();
+            Description = "Francisco Bolognesi";
+        }
+
         public override TimelineID ShootTimelineId()
         {
             return TimelineID.CANT_SHOOT;

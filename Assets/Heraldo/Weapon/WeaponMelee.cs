@@ -13,6 +13,7 @@ namespace Heraldo.Weapon
         public override void Awake()
         {
             base.Awake();
+            Description = "Machete";
             _impact = GameObject.FindWithTag("Particle Manager").GetComponent<BulletImpact>();
         } 
         public override TimelineID ShootTimelineId()

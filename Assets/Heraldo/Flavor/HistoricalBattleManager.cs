@@ -37,6 +37,11 @@ namespace Heraldo.Flavor
             objectiveManager.uiManager.FadeToBlack(2f);
         }
 
+        public void CompleteObjective(HistoricalEvent @event)
+        {
+            objectiveManager.CompleteObjective();
+        }
+
         public void HandleHistoricalEvent(HistoricalEvent @event)
         {
             switch (@event.eventType)
@@ -64,6 +69,11 @@ namespace Heraldo.Flavor
                 case HistoricalEventType.SWITCH_SCENE:
                 {
                     SwitchScene(@event);
+                    break;
+                }
+                case HistoricalEventType.COMPLETE_OBJECTIVE:
+                {
+                    CompleteObjective(@event);
                     break;
                 }
             }

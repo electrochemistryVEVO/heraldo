@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using System.Threading;
 using Heraldo.Cutscenes;
+using Heraldo.Global.Structs;
+using Heraldo.UI.Components;
 using JetBrains.Annotations;
 using NUnit.Framework.Constraints;
 using TMPro;
@@ -15,15 +17,18 @@ namespace Heraldo.UI
     {
         private static readonly int Distance = Shader.PropertyToID("_Distance");
         public Image crosshair;
-        public TMP_Text crosshairText;
-        public TMP_Text objectiveText;
+        public GameObject interactPopup;
+        private TMP_Text _interactText;
+        public ObjectivePopup objectivePopup;
         public TMP_Text flavorText;
         public TMP_Text cutsceneActorNameText;
         public TMP_Text cutsceneText;
-        public TMP_Text ammoCountText;
-        public TMP_Text healthText;
+        public TMP_Text wpnDescriptionText;
+        public AmmoBar ammoCount;
+        public PPHealth healthFx;
         public TMP_Text dayTimeText;
-        public Image ammoLoad;
+        public AnalogClock dayTimeClock;
+        public WpnLoading ammoLoad;
         public Image blackFadePanel;
         
         private Color ALLY_COLOR = Color.green;
@@ -49,12 +54,18 @@ namespace Heraldo.UI
 
         public void SeeInteractable([CanBeNull] string str)
         {
-            crosshairText.text = str ?? "";
+            _interactText.text = str ?? "";
+            if (str is null)
+            {
+                interactPopup.SetActive(false);
+            }
+            else interactPopup.SetActive(true);
         }
 
         private void Awake()
         {
             _crosshairMaterial = Instantiate(crosshair.material);
+            _interactText = interactPopup.transform.GetChild(1).GetComponent<TMP_Text>();
         }
 
         private void Update()
@@ -83,25 +94,26 @@ namespace Heraldo.UI
             }
         }
 
+        public void WeaponDescriptionText(string desc)
+        {
+            wpnDescriptionText.text = desc;
+        }
+
         public void CutsceneText(string subjectName="",string text="")
         {
             cutsceneActorNameText.text = subjectName;
             cutsceneText.text = text;
         }
 
-        public void AmmoText(string num="")
+        public void AmmoText(int num)
         {
-            int _num;
-            if (int.TryParse(num, out _num))
-            {
-                ammoCountText.text = _num==0?"No ammo!":_num<0?"Melee weapon":"Ammo Count: "+num;
-            } 
-            else Debug.Log("Invalid ammo quantity");
+            ammoCount.SetAmmo(num);
         }
 
         public void DayTimeText(string timeText)
         {
-            dayTimeText.text = timeText;
+            dayTimeText.text = timeText + " AM";
+            dayTimeClock.SetTime(timeText);
         }
 
         public void StopOrResumeDayTimeText(bool resume)
@@ -109,24 +121,41 @@ namespace Heraldo.UI
             dayTimeText.color = resume ? Color.white : Color.red;
         }
 
-        public void HealthText(string num = "")
+        public void HealthText(int num,int maxHealth=100)
         {
-            healthText.text = "Salud: " + num;
+            healthFx.SetHealth(num,maxHealth);
         }
 
-        public void ObjectiveText(string obj = "")
+        public void TakeDamage(int num, int maxHealth)
         {
-            objectiveText.text = "Objetivo: " + obj;
+            Debug.Log("[SHOW-DAMAGE] Damage shown by the UI");
+            healthFx.ShowDamage(num,maxHealth);
+        }
+
+        public void ObjectiveText(Objective obj)
+        {
+            objectivePopup.ChangeObjective(obj);
+        }
+
+        public void InitObjective(Objective obj)
+        {
+            objectivePopup.InitObjective(obj);
+        }
+
+        public void ShowCompleteObjective(Objective obj)
+        {
+            objectivePopup.ShowCompleteObjective(obj);
         }
 
         public void ShowHideAmmoText(bool show=false)
         {
-            ammoCountText.alpha = show ? 1.0f : 0.0f;
+            wpnDescriptionText.alpha = show ? 1f : 0;
+            ammoCount.ShowOrHide(show);
         }
 
         public void ToggleAmmoLoad(bool value)
         {
-            ammoLoad.color = new Color(ammoLoad.color.r,ammoLoad.color.g,ammoLoad.color.b,value ? 1.0f : 0);
+            ammoLoad.ToggleAmmoLoad(value);
         }
 
         public void SetCrosshairSpread(float spreadMultiplier)

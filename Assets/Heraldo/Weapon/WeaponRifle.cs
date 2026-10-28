@@ -15,6 +15,7 @@ namespace Heraldo.Weapon
         public override void Awake()
         {
             base.Awake();
+            Description = "Remington Rolling Block";
             _impact = GameObject.FindWithTag("Particle Manager").GetComponent<BulletImpact>();
         } 
 

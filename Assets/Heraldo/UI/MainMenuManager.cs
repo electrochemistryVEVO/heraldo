@@ -23,8 +23,7 @@ namespace Heraldo.UI
             Debug.Log("Load level button pressed");
             LoadingScreen.SetActive(true);
             LandingScreen.SetActive(false);
-            SceneManager.LoadSceneAsync(scn)!.completed += operation => 
-                LoadingScreen.SetActive(false) ;
+            SceneManager.LoadSceneAsync(scn);
         }
 
         void Quit()
