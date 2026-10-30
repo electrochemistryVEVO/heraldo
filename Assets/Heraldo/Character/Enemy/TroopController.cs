@@ -94,7 +94,7 @@ namespace Heraldo.Character.Enemy
                 : Battle_Phase == BattlePhase.MORRO_TWO
                     ? TrooperRespawnSpots2
                     : TrooperRespawnSpots3;
-            return TrooperRespawnSpots.Aggregate(Vector3.negativeInfinity, (acum, val) =>
+            return respawnSpots.Aggregate(Vector3.negativeInfinity, (acum, val) =>
                 (acum - vec).magnitude > (val.position - vec).magnitude ? val.position : acum);
         }
 

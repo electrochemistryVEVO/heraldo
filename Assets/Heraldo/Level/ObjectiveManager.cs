@@ -26,10 +26,12 @@ namespace Heraldo.Level
         private void Awake()
         {
             _firstChange = false;
+            positionBillboard.gameObject.SetActive(false);
         }
 
         private void Start()
         {
+            positionBillboard.gameObject.SetActive(true);
             if(currentObjective.ID == ObjectiveID.NO_OBJECTIVE)
             {
                 currentObjective = objectiveMap.Objectives[0];

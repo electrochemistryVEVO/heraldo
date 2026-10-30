@@ -59,7 +59,7 @@ namespace Heraldo.Character.Enemy
                 if (--_mercyFrames <= 0)
                 {
                     _mercyFrames = MERCY_FRAMES;
-                    npc.Enemy_State = EnemyState.HUNT;
+                    if(npc.Enemy_State != EnemyState.PATROL)npc.Enemy_State = EnemyState.HUNT;
                 }
             }
         }

@@ -76,6 +76,16 @@ namespace Heraldo.UI
                 flavorText.color = new Color(color.r, color.g, color.b, color.a/2);
             }
         }
+
+        public void CutsceneMode(bool on = true)
+        {
+            ammoCount.gameObject.SetActive(!on);
+            ammoLoad.gameObject.SetActive(!on);
+            wpnDescriptionText.gameObject.SetActive(!on);
+            objectivePopup.gameObject.SetActive(!on);
+            dayTimeText.gameObject.SetActive(!on);
+            dayTimeClock.gameObject.SetActive(!on);
+        }
  
         public void FlavorText(string text)
         {
@@ -160,7 +170,9 @@ namespace Heraldo.UI
 
         public void SetCrosshairSpread(float spreadMultiplier)
         {
+            
             float dist = crosshair.material.GetFloat(Distance);
+            
             float finalDist = Mathf.Lerp(dist, 1 - spreadMultiplier, 0.5f); 
             crosshair.material.SetFloat(Distance,finalDist); 
             //crosshair.material = _crosshairMaterial;

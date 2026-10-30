@@ -7,6 +7,7 @@ namespace Heraldo.Global.Enums
         CHANGE_OBJECTIVE,
         CHANGE_LOSE_CONDITION,
         SWITCH_SCENE,
-        COMPLETE_OBJECTIVE
+        COMPLETE_OBJECTIVE,
+        TRIGGER_CUTSCENE
     }
 }

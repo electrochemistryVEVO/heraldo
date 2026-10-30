@@ -1,7 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
+using Heraldo.Character;
+using Heraldo.Character.Enemy;
+using Heraldo.Level;
 using Heraldo.UI;
+using Heraldo.VFX.Lighting;
 using Unity.Cinemachine;
 using UnityEngine;
 
@@ -10,24 +16,27 @@ namespace Heraldo.Cutscenes
     public class CutsceneManager : MonoBehaviour
     {
         public Cutscene currentCutscene;
+        public CutsceneList cutsceneList;
+        
+        //Estos dos tienen procesos automaticos que deben de detenerse en las cutscenes
+        public TroopController troop;
+        public DayNightManager dayNight;
+        public ObjectiveManager objectiveManager;
+        public List<EnemyController> actorList;
+        public Transform spots;
+        public FPSController player;
+
+        private int _speechIndex = 0;
         private int _currentPart;
-        private int _currentAction = -1;
-        private Transform[] _actorList;
+        private int _currentAction = -1; 
         private Transform _prevCameraTarget;
         public CinemachineVirtualCameraBase currentCamera;
-        private CinemachineThirdPersonFollow _currentCameraTransposer;
-        private bool _cutsceneMode = false;
+        private CinemachineThirdPersonFollow _currentCameraTransposer; 
         private LevelUIManager _uiCanvas;
+        private FPSController _player;
+        private Vector3[] _spotList;
 
-        public bool CutsceneMode
-        {
-            get => _cutsceneMode;
-            set
-            {
-                _cutsceneMode = value;
-                if (value == false) endCutscene();
-            }
-        }
+        public bool CutsceneMode = false;
 
         //Events
         public delegate void CutsceneEnded();
@@ -38,11 +47,69 @@ namespace Heraldo.Cutscenes
         {
             _currentCameraTransposer = (CinemachineThirdPersonFollow)currentCamera.GetCinemachineComponent(CinemachineCore.Stage.Body);
             _uiCanvas = GameObject.FindWithTag("UI Canvas").GetComponent<LevelUIManager>();
+            _spotList = spots.GetComponentsInChildren<Transform>()
+                .Where(val => val.gameObject != spots.gameObject)
+                .Select(val => val.position)
+                .ToArray(); 
+            if (CutsceneMode)
+            {
+                troop.enabled = false;
+                dayNight.enabled = false;
+                objectiveManager.enabled = false;
+                //_uiCanvas.gameObject.SetActive(false);
+            }
+        }
+        
+
+        private void Start()
+        {
+            if (CutsceneMode)
+            {
+                _uiCanvas.CutsceneMode();
+                player.ToggleInputs();
+                StartCutscene().RunSynchronously();
+            }
+        }
+
+        private Task ProcessCutsceneAction(CutsceneAction action)
+        {
+            switch (action.type)
+            {
+                case CutsceneActionType.CHARACTER_MOVE:
+                {
+                    EnemyController who = actorList[action.who];
+                    Vector3 where = _spotList[action.where];
+                    return who.WalkToPoint(new Vector2(where.x, where.z));
+                }
+                case CutsceneActionType.WAIT:
+                {
+                    return Task.Delay((int)MathF.Round(action.howMuch*1000));
+                }
+                case CutsceneActionType.ADVANCE_SPEECH:
+                {
+                    Awaitable.MainThreadAsync();
+                    var part = currentCutscene.parts[_speechIndex++];
+                    if (part.actor >= 0)
+                    {
+                        var actor = actorList[part.actor];
+                        _uiCanvas.CutsceneText(actor.name,part.text); 
+                    }
+                    else _uiCanvas.CutsceneText();
+                    return Task.Delay((int)MathF.Round(action.howMuch*1000));
+                }
+                case CutsceneActionType.PLAYER_ROTATE_TOWARDS:
+                {
+                    Awaitable.MainThreadAsync();
+                    var where = _spotList[action.where];
+                    return player.RotateTowards(where);
+                }
+            }
+            return null;
         }
 
         private void Update()
         {
-            if (CutsceneMode)
+            /*if (CutsceneMode)
             {
                 //Parts 
                 currentCamera.Follow = _actorList[_currentPart];
@@ -62,38 +129,52 @@ namespace Heraldo.Cutscenes
                 currentCamera.Follow = _prevCameraTarget;
                 _uiCanvas.CutsceneText();
                 _prevCameraTarget = null;
+            }*/
+        }
+
+        public async Task StartCutscene()
+        {
+            try
+            {
+                CutsceneMode = true; 
+                _speechIndex = 0;
+                int i = 0;
+                foreach (var actions in currentCutscene.actions
+                             .GroupBy(val => val.order)
+                             .OrderBy(val => val.Key))
+                {
+                    //CutscenePart part = currentCutscene.parts.Find(val => val.order == i); 
+                    //if(!part.HasValue) _uiCanvas.CutsceneText();
+                    //else _uiCanvas.CutsceneText(part.Value.subjectName,part.Value.text);
+                    await Task.WhenAll(actions.Select(ProcessCutsceneAction));
+                    i++;
+                }
+                await Awaitable.MainThreadAsync();
+                _uiCanvas.CutsceneText();
+                FinishCutscene();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
             }
         }
 
-        public void StartCutscene()
+        private void FinishCutscene()
         {
-            _actorList = currentCutscene.parts.Select(x => transform.Find(x.author)).ToArray();
-;           CutsceneMode = true;
-            _currentCameraTransposer.ShoulderOffset = Vector3.back * 5;
-            Thread t1 = new Thread(() =>
-            {
-                for (_currentPart=0; _currentPart < currentCutscene.parts.Count; _currentPart++)
-                {
-                    Debug.Log("Switching to actor "+_currentPart);
-                    for (int i = 0; i < currentCutscene.actions.Count; i++)
-                    {
-                        if (currentCutscene.actions[i].order == _currentPart)
-                        {
-                            _currentAction = i;
-                            break;
-                        }
-                    }
-                    //currentCamera.LookAt = currentCutscene.Stage.transform.Find(
-                    //    currentCutscene.parts[_currentPart].author);
-                    Thread.Sleep(Mathf.RoundToInt(currentCutscene.parts[_currentPart].time*1000));
-                    //Setear texto en la interfaz
-                }
+            CutsceneMode = false;
+            troop.enabled = true;
+            dayNight.enabled = true;
+            objectiveManager.enabled = true;
+            _uiCanvas.CutsceneMode(false);
+            player.ToggleInputs(true);
+        }
 
-                _currentCameraTransposer.ShoulderOffset = Vector3.zero;
-                CutsceneMode = false;
-            });
-            _prevCameraTarget = currentCamera.Follow;
-            t1.Start();
+        public void OnDrawGizmos()
+        {
+            foreach (var positions in spots.GetComponentsInChildren<Transform>())
+            {
+                Gizmos.DrawWireSphere(positions.position,5f);
+            }
         }
 
         public void PrepareCutscene(Cutscene cutscene)

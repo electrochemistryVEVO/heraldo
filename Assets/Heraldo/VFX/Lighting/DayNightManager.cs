@@ -122,7 +122,7 @@ namespace Heraldo.VFX.Lighting
 
         private void Update()
         {
-            DynamicGI.UpdateEnvironment();
+            //DynamicGI.UpdateEnvironment();
         }
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Threading.Tasks;
 using Heraldo.Cutscenes;
 using Heraldo.Flavor;
 using Heraldo.Global.Enums;
@@ -7,6 +8,8 @@ using Heraldo.Global.Structs;
 using Heraldo.UI;
 using Heraldo.Weapon;
 using Heraldo.Weapon.Holster;
+using LitMotion;
+using LitMotion.Extensions;
 using StarterAssets;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -65,11 +68,16 @@ namespace Heraldo.Character
         //Health
         public int MaxHealth = 100;
         private int _health;
+        
+        //FirstPersonController variables
+        private float _ogWalkSpeed;
+        private float _ogSprintSpeed;
+        private float _ogRotationSpeed;
 
         private float SpreadMultiplier()
         {
             Vector3 velocity = (transform.position - _prevPos) / Time.deltaTime;
-            return velocity.magnitude / _controller.SprintSpeed;
+            return velocity.magnitude / _ogSprintSpeed;
         }
 
         private void Awake()
@@ -89,6 +97,9 @@ namespace Heraldo.Character
             _playableFpsShoot = GameObject.FindWithTag("MainCamera").GetComponent<PlayableDirector>();
             _deltaPosFpsArms = _controller.CinemachineCameraTarget.transform.position - FpsArms.position;
             _health = MaxHealth;
+            _ogWalkSpeed = _controller.MoveSpeed;
+            _ogSprintSpeed = _controller.SprintSpeed;
+            _ogRotationSpeed = _controller.RotationSpeed;
         }
 
         private void Start()
@@ -142,7 +153,7 @@ namespace Heraldo.Character
             
             bool isCrouched = _inputs.crouch;
             //Modificar valocidad de caminata
-            _controller.MoveSpeed = (isCrouched && _controller.Grounded) ? CrouchSpeed : _move_speed;
+            _controller.MoveSpeed = (isCrouched && _controller.Grounded) ? CrouchSpeed : _controller.MoveSpeed;
             _camera.localPosition = new Vector3(
                 _camera.localPosition.x, 
                 (isCrouched && _controller.Grounded) ? CrouchGroundOffset : GroundOffset, 
@@ -226,6 +237,18 @@ namespace Heraldo.Character
             _uiCanvas.AmmoText(_currentWeapon.AmmoCount);
             return result;
         }
+
+        public void ToggleInputs(bool enable = false)
+        {
+            _inputs.ModifyInputs(new string[]
+            {
+                "crouch","shoot","holster","switch_weapon",
+                "pickup"
+            },enable);
+            _controller.MoveSpeed = enable ? _ogWalkSpeed : 0;
+            _controller.SprintSpeed = enable ? _ogSprintSpeed : 0;
+            _controller.RotationSpeed = enable ? _ogRotationSpeed : 0;
+        }
         private void Pickup()
         {
             GameObject obj;
@@ -288,5 +311,19 @@ namespace Heraldo.Character
         {
             _arsenal.HoldCorpse();
         }
+        
+        //Cutscene actions
+        public async Task RotateTowards(Vector3 target)
+        {
+            Quaternion q1 = transform.rotation;
+            q1.SetLookRotation(target - transform.position);
+            await LMotion.Create(transform.rotation, q1, 1f)
+                .WithEase(Ease.OutSine)
+                .BindToRotation(transform)
+                .AddTo(gameObject)
+                .ToAwaitable();
+
+        }
+        
     }
 }
