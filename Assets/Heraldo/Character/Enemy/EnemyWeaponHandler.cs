@@ -89,6 +89,7 @@ namespace Heraldo.Character.Enemy
 
         public void SwitchWeapon(int index)
         {
+            Debug.Log("[SWITCH-WEAPON] Weapon index: "+index);
             //Debug.Log(index);
             if(_selectedWeapon)
             {

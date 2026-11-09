@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 #if ENABLE_INPUT_SYSTEM
@@ -15,7 +16,13 @@ namespace Heraldo.Character
         public bool holster;
         public bool pickup;
         public int selectedWeapon;
-        
+        private StarterAssetsInputs _otherInputs;
+
+        private void Awake()
+        {
+            _otherInputs = GetComponent<StarterAssetsInputs>();
+        }
+
         private Dictionary<string, bool> enabledInputMap = new Dictionary<string, bool>()
         {
             {"crouch",true},
@@ -37,7 +44,7 @@ namespace Heraldo.Character
         {
             bool enabled;
             enabledInputMap.TryGetValue("crouch", out enabled);
-            if(enabled)CrouchInput(value.isPressed);
+            if(enabled && !_otherInputs.sprint)CrouchInput(value.isPressed);
         }
 
         public void OnShoot(InputValue value)

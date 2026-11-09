@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Heraldo.Character.Pathfinding;
+using Heraldo.Flavor;
 using Heraldo.Global.Enums;
 using Heraldo.Global.Structs;
 using Newtonsoft.Json;
@@ -54,7 +55,7 @@ namespace Heraldo.Character.Enemy
         private float _respawnCount;
 
         // Only on the first position assignment do we chain the delegate
-        private bool _firstAssignment = false;
+        private bool _firstAssignment = true;
         
         //Delegates
         public delegate void TrooperDown(Guid nme);
@@ -77,6 +78,7 @@ namespace Heraldo.Character.Enemy
 
         private void Awake()
         {
+            
             //Get onready vars
             _allyTroopers = AllyTroop.GetComponentsInChildren<EnemyController>().ToList();
             _enemyTroopers = EnemyTroop.GetComponentsInChildren<EnemyController>().ToList();
@@ -84,13 +86,18 @@ namespace Heraldo.Character.Enemy
             _barricadeList = barricades.GetComponentsInChildren<CoverBarricade>();
             _occupiedSpots = new();
             _respawnCount = TrooperRespawnTime;
-
+            
+            //Assign names of ally objects
+            if(_allyTroopers.Count>0)
+                AssignNamesOfAllies();
+            
             //if (Battle_Phase == BattlePhase.ROUTINES) AssignClosestRoutines();
             //else AssignPositions();
         }
 
         private void Start()
         {
+            //Assign positions
             if (Battle_Phase == BattlePhase.ROUTINES) AssignClosestRoutines();
             else AssignPositions();
         }
@@ -186,6 +193,16 @@ namespace Heraldo.Character.Enemy
             }
         }
 
+        private void AssignNamesOfAllies()
+        {
+            string[] names = Names.GetRandomBulk(_allyTroopers.Count);
+            for (int i = 0; i < _allyTroopers.Count; i++)
+            {
+                if(!_allyTroopers[i].name.StartsWith("Ally"))continue;
+                _allyTroopers[i].name = names[i];
+            }
+        }
+
         private void AssignRespawnRoutine(EnemyController npc, Routine? routine, Spot? closest)
         {
             TrooperDown cb = (nme) => { };
@@ -227,7 +244,7 @@ namespace Heraldo.Character.Enemy
                     {
                         Spot closestSpot = FindClosestSpot(_nme);
                         AssignPositionToTrooper(_nme, closestSpot);
-                        if(_firstAssignment && DoRespawn)AssignRespawnRoutine(_nme,null,closestSpot);
+                        if(DoRespawn)AssignRespawnRoutine(_nme,null,closestSpot);
                     }
                 }));
             };
@@ -245,7 +262,6 @@ namespace Heraldo.Character.Enemy
                 if(_firstAssignment && DoRespawn && !trooper.IsAlly)AssignRespawnRoutine(trooper,trooper.GetClosestRoutine(),null);
                 //Connect respawns
             }
-
             _firstAssignment = false;
         }
 

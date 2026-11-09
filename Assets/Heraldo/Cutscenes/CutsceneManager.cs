@@ -161,33 +161,22 @@ namespace Heraldo.Cutscenes
                     troop.WakeEnemies();
                     return Task.CompletedTask;
                 }
+                case CutsceneActionType.CHARACTER_EQUIP_WEAPON:
+                {
+                    var who = actorList[action.who];
+                    who.ChangeWeapon(action.whatIndex);
+                    return Task.CompletedTask;
+                }
+                case CutsceneActionType.SPAWN_OBJECT:
+                {
+                    var what = Instantiate(action.what);
+                    things.Add(Instantiate(what));
+                    var where = _spotList[action.where];
+                    what.transform.position = where.position;
+                    return Task.CompletedTask;
+                }
             }
             return null;
-        }
-
-        private void Update()
-        {
-            /*if (CutsceneMode)
-            {
-                //Parts 
-                currentCamera.Follow = _actorList[_currentPart];
-                _uiCanvas.CutsceneText(currentCutscene.parts[_currentPart].subjectName,
-                    currentCutscene.parts[_currentPart].text);
-                //Actions
-                if (_currentAction >= 0)
-                {
-                    CutsceneAction action = currentCutscene.actions[_currentAction];
-                    Instantiate(action.spawn, action.where, Quaternion.identity);
-                    _currentAction = -1;
-                } 
-            }
-            else
-            {
-                if (_prevCameraTarget is null) return;
-                currentCamera.Follow = _prevCameraTarget;
-                _uiCanvas.CutsceneText();
-                _prevCameraTarget = null;
-            }*/
         }
 
         public async Task StartCutscene()

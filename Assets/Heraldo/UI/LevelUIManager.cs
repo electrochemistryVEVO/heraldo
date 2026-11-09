@@ -21,6 +21,7 @@ namespace Heraldo.UI
     {
         private static readonly int Distance = Shader.PropertyToID("_Distance");
         public Image crosshair;
+        public TMP_Text crosshairText;
         public GameObject interactPopup;
         private TMP_Text _interactText;
         public ObjectivePopup objectivePopup;
@@ -49,9 +50,16 @@ namespace Heraldo.UI
             else
             {
                 if (subject.layer == LayerMask.NameToLayer("Enemy"))
+                {
                     crosshair.color = ENEMY_COLOR;
+                    crosshairText.alpha = 0;
+                }
                 else
+                {
                     crosshair.color = ALLY_COLOR;
+                    crosshairText.alpha = 1f;
+                    crosshairText.text = subject.name;
+                }
                 //crosshairText.text = subject.name;
             }
         }
@@ -87,6 +95,7 @@ namespace Heraldo.UI
             ammoLoad.gameObject.SetActive(!on);
             wpnDescriptionText.gameObject.SetActive(!on);
             objectivePopup.gameObject.SetActive(!on);
+            interactPopup.SetActive(!on);
             dayTimeText.gameObject.SetActive(!on);
             dayTimeClock.gameObject.SetActive(!on);
         }

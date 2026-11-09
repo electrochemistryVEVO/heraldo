@@ -35,6 +35,7 @@ namespace Heraldo.Character
         public GameObject Weapon;
         private GenericWeapon _currentWeapon;
         GenericWpnHolster _arsenal;
+        public int LastWpnIndex => _currentWeapon is not null ? _currentWeapon.transform.GetSiblingIndex() : -1;
         private WeakReference<GameObject> _nearestInteractableRef;
         
         //Components within the instance
@@ -318,6 +319,12 @@ namespace Heraldo.Character
                 .BindToRotation(transform)
                 .AddTo(gameObject)
                 .ToAwaitable();
+        }
+        
+        //Requests
+        public void ChangeCorpsePrefab(GameObject obj)
+        {
+            _arsenal.corpsePrefab = obj;
         }
         
         //Save data

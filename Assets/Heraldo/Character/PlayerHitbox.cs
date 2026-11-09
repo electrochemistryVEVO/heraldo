@@ -9,7 +9,7 @@ namespace Heraldo.Character
         //Workaround que tuve que hacer para que el hitbox del jugador registrara los golpes
         public FPSController controller;
         public Collider crouchHitbox;
-        private Collider _hitbox;
+        private CapsuleCollider _hitbox;
         private bool _crouched = false;
 
         public void OnTakeDamage(DamageInfo info)
@@ -19,7 +19,7 @@ namespace Heraldo.Character
 
         private void Awake()
         {
-            _hitbox = GetComponent<Collider>();
+            _hitbox = GetComponent<CapsuleCollider>();
         }
 
         private void Update()
@@ -34,14 +34,14 @@ namespace Heraldo.Character
 
         public void Crouch()
         {
-            _hitbox.enabled = false;
-            crouchHitbox.enabled = true;
+            _hitbox.height = 1.5f;
+            _hitbox.center = Vector3.up* (-0.25f);
         }
 
         public void Stand()
         {
-            _hitbox.enabled = true;
-            crouchHitbox.enabled = false;
+            _hitbox.height = 2f;
+            _hitbox.center = Vector3.zero;
         }
     }
 }

@@ -25,7 +25,9 @@ namespace Heraldo.Cutscenes
         CHARACTER_REPOSITION,
         DESTROY_OBJECT,
         NEXT_LEVEL,
-        WAKE_ENEMIES
+        WAKE_ENEMIES,
+        CHARACTER_EQUIP_WEAPON,
+        SPAWN_OBJECT
     }
     [System.Serializable]
     public struct CutsceneAction

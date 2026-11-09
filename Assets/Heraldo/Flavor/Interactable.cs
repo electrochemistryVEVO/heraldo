@@ -10,6 +10,7 @@ namespace Heraldo.Flavor
     public class Interactable : MonoBehaviour
     {
         public ObjectiveID ObjetivoRelacionado = ObjectiveID.NO_OBJECTIVE;
+        public int WeaponPrerequisite = -1;
         protected ObjectiveManager _objectiveManager;
         protected CutsceneManager _cutsceneManager;
 
