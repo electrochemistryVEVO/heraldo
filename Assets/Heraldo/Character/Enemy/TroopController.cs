@@ -48,9 +48,13 @@ namespace Heraldo.Character.Enemy
         public List<Transform> TrooperRespawnSpots2;
         
         public List<Transform> TrooperRespawnSpots3;
+        public Transform AllyRespawnSpots;
+        public Transform EnemyRespawnSpot;
         private Queue<Action> respawnTaskQueue = new Queue<Action>();
         private float _respawnCount;
-        
+
+        // Only on the first position assignment do we chain the delegate
+        private bool _firstAssignment = false;
         
         //Delegates
         public delegate void TrooperDown(Guid nme);
@@ -64,6 +68,11 @@ namespace Heraldo.Character.Enemy
                 _respawnCount = TrooperRespawnTime;
                 if (respawnTaskQueue.Count > 0)respawnTaskQueue.Dequeue()();
             } 
+        }
+        
+        private void OnGUI()
+        {
+            GUI.Label(new Rect(10f,10f,200f,50f),$"Enemy Count: {_enemyTroopers.Count}");
         }
 
         private void Awake()
@@ -88,7 +97,7 @@ namespace Heraldo.Character.Enemy
 
         private Vector3 FindClosestRespawn(Vector3 vec)
         {
-            Debug.Log("[CLOSEST-RESPAWN] Current battle phase: "+Battle_Phase);
+            //Debug.Log("[CLOSEST-RESPAWN] Current battle phase: "+Battle_Phase);
             var respawnSpots = Battle_Phase == BattlePhase.MORRO_ONE
                 ? TrooperRespawnSpots
                 : Battle_Phase == BattlePhase.MORRO_TWO
@@ -125,29 +134,13 @@ namespace Heraldo.Character.Enemy
             {
                 //Debug.Log("[POSITION-CLOSEST] "+closest.GetFreeSpotId(result.index));
                 closest.SetSpotOccupier(npc,result.index);
-                if(DoRespawn && !npc.IsAlly)
-                    AssignRespawnRoutine(npc,null,result);
+                //if(DoRespawn && !npc.IsAlly)
+                //    AssignRespawnRoutine(npc,null,result);
                 //Debug.Log("[IND-CLOSEST] "+indClosest);
                 //Debug.Log("[ID-CLOSEST] " + closest.GetCoverBarricadeId());
                 //_occupiedSpots.Add(closest.GetCoverBarricadeId());
             }
             return result;
-        }
-
-        IEnumerator WriteToJson(List<EnemyController> troopers)
-        {
-            yield return new WaitForSeconds(5);
-            Debug.Log("Writing paths to JSON...");
-            Dictionary<string, List<Path>> paths = new();
-            foreach (var trooper in troopers)
-            {
-                trooper.CapturePath(paths);
-            }
-            File.WriteAllText(
-                "pathCache.json",
-                JsonConvert.SerializeObject(troopers,
-                    Newtonsoft.Json.Formatting.Indented));
-            Debug.Log("Paths written");
         }
 
         private void AssignPositions()
@@ -161,8 +154,36 @@ namespace Heraldo.Character.Enemy
                 }
                 Spot spot = FindClosestSpot(trooper);
                 AssignPositionToTrooper(trooper,spot);
-            } 
+                if(_firstAssignment && DoRespawn && !trooper.IsAlly)AssignRespawnRoutine(trooper,null,spot);
+            }
+            _firstAssignment = false;
             //StartCoroutine(WriteToJson(troopers));
+        }
+        
+        //Workaround
+        public void RespawnToTop()
+        {
+            foreach (var trooper in _allyTroopers)
+            {
+                if (trooper == null)
+                {
+                    continue;
+                }
+                trooper.GetComponent<NavMeshAgent>().Warp(AllyRespawnSpots.position);
+                Spot spot = FindClosestSpot(trooper);
+                AssignPositionToTrooper(trooper,spot);
+            }
+
+            foreach (var trooper in _enemyTroopers)
+            {
+                if (trooper == null)
+                {
+                    continue;
+                }
+                trooper.GetComponent<NavMeshAgent>().Warp(EnemyRespawnSpot.position);
+                Spot spot = FindClosestSpot(trooper);
+                AssignPositionToTrooper(trooper,spot);
+            }
         }
 
         private void AssignRespawnRoutine(EnemyController npc, Routine? routine, Spot? closest)
@@ -180,8 +201,12 @@ namespace Heraldo.Character.Enemy
                     closest.Value.coverBarricade?.SetSpotOccupier(null, closest.Value.index);
                 }
 
-                if (npc.IsAlly) _allyTroopers.Remove(npc); 
-                else _enemyTroopers.Remove(npc);
+                if (npc.IsAlly)
+                {
+                    _allyTroopers.Remove(npc);
+                    return;
+                }
+                _enemyTroopers.Remove(npc);
                 //if (respawnTaskQueue.Count > 0) respawnTaskQueue.Peek()?.Wait(); 
                 respawnTaskQueue.Enqueue(new Action(() =>
                 {
@@ -194,11 +219,16 @@ namespace Heraldo.Character.Enemy
                     //closest.SetSpotOccupier(obj.GetComponent<EnemyController>(),result.index);
                     EnemyController _nme = obj.GetComponent<EnemyController>();
                     _nme.Troop = this;
+                    _enemyTroopers.Add(_nme);
                     //Debug.Log("[ENEMY-SPAWN] New enemy spawned. Entity Id: "+_nme.ID);
                     if(Battle_Phase == BattlePhase.ROUTINES && routine.HasValue)
                         AssignRoutineToTrooper(_nme,routine.Value);
-                    else if(Battle_Phase < BattlePhase.ROUTINES) 
-                        AssignPositionToTrooper(_nme,FindClosestSpot(_nme));
+                    else if(Battle_Phase < BattlePhase.ROUTINES)
+                    {
+                        Spot closestSpot = FindClosestSpot(_nme);
+                        AssignPositionToTrooper(_nme, closestSpot);
+                        if(_firstAssignment && DoRespawn)AssignRespawnRoutine(_nme,null,closestSpot);
+                    }
                 }));
             };
             trooperDown += cb;
@@ -212,9 +242,11 @@ namespace Heraldo.Character.Enemy
                 //Follow closest routine
                 trooper.enemyRoutines = EnemyRoutines;
                 trooper.FollowInternalRoutine();
-                AssignRespawnRoutine(trooper,trooper.GetClosestRoutine(),null);
+                if(_firstAssignment && DoRespawn && !trooper.IsAlly)AssignRespawnRoutine(trooper,trooper.GetClosestRoutine(),null);
                 //Connect respawns
-            } 
+            }
+
+            _firstAssignment = false;
         }
 
         private void AssignPositionToTrooper(EnemyController trooper,Spot spot)
@@ -260,6 +292,26 @@ namespace Heraldo.Character.Enemy
             Battle_Phase++;
             //Reassign positions
             AssignPositions();
+        }
+
+        public void WakeEnemies()
+        {
+            List<EnemyController> troopers = _enemyTroopers;
+            foreach (var trooper in troopers)
+            {
+                if (trooper == null)
+                {
+                    continue;
+                }
+                Spot spot = FindClosestSpot(trooper);
+                AssignPositionToTrooper(trooper,spot);
+            } 
+        }
+
+        public void KillNpc(string name)
+        {
+            var nme = _allyTroopers.Find(val => val.name == name);
+            nme.OnTakeDamage(new DamageInfo(int.MaxValue,Vector3.zero));
         }
         
     }

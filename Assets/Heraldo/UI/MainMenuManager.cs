@@ -34,17 +34,13 @@ namespace Heraldo.UI
 
         private void SaveDataTest()
         {
-            JsonParser.WriteSaveData(new GameSaveData("Scenes/ScnPhase1"));
-        }
-
-        private void Awake()
-        {
-            //SaveDataTest();  
-            
+            JsonParser.WriteSaveData(new GameSaveData("Scenes/ScnPhase1",100,5));
         }
 
         private void Start()
         {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
             QuitButton.onClick.AddListener(Quit);
             StartButton.onClick.AddListener(() => { JsonParser.DeleteSaveData(); LoadLevel(); });
             if (JsonParser.SaveFileExists())
@@ -57,5 +53,6 @@ namespace Heraldo.UI
             }
             else ContinueButton.gameObject.SetActive(false);
         }
+         
     }
 }

@@ -7,7 +7,7 @@ namespace Heraldo.Global.Enums
         SECOND_LINE_OF_DEFENSE,
         THIRD_LINE_OF_DEFENSE,
         FOURTH_LINE_OF_DEFENSE,
-        SURVIVE,
+        HELP_BOLOGNESI,
         PICK_UP_BOLOGNESI,
         CARRY_BOLOGNESI_DOWN_MOUNT,
         CARRY_BOLOGNESI_TO_SHORE,

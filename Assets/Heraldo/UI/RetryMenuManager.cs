@@ -1,3 +1,4 @@
+using System;
 using Heraldo.Global;
 using Heraldo.Global.Structs;
 using UnityEngine;
@@ -42,6 +43,12 @@ namespace Heraldo.UI
             else _scnToLoad = "Scenes/MainScene";
             QuitButton.onClick.AddListener(Quit);
             RetryButton.onClick.AddListener(LoadLevel);
+        }
+
+        private void Start()
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
         }
     }
 }

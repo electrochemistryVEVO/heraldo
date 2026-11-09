@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Heraldo.Character;
 using Heraldo.Character.Pathfinding;
 using Heraldo.UI;
@@ -54,6 +55,16 @@ namespace Heraldo.Weapon.Holster
             _charAnimator = _character.CharacterAnimator;
             //Debug.Log(_weapons.Length);
             //_holsters = new Holster[3];
+        }
+
+        public int[] GetAmmoCounts()
+        {
+            return _weapons.Select(val => val.AmmoCount).ToArray();
+        }
+
+        public void SetAmmoCount(int i, int value)
+        {
+            _weapons[i].AmmoCount = value;
         }
 
         public void Update()

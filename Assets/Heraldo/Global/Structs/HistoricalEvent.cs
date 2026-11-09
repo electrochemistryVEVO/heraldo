@@ -11,6 +11,7 @@ namespace Heraldo.Global.Structs
         public int wpnIndex;
         public ObjectiveID objective;
         public bool completed;
+        public string commander;
         public string newLosingScene;
     }
 }

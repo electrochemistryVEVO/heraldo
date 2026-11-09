@@ -44,6 +44,10 @@ PrefabInstance:
       propertyPath: IsAlly
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 5091107231566671745, guid: 2a6a91d74d4e1f028a595281cba837d5, type: 3}
+      propertyPath: MaxHealth
+      value: 5000
+      objectReference: {fileID: 0}
     - target: {fileID: 6312608600611663304, guid: 2a6a91d74d4e1f028a595281cba837d5, type: 3}
       propertyPath: m_Layer
       value: 13
@@ -104,8 +108,31 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 9076889669810565502, guid: 2a6a91d74d4e1f028a595281cba837d5, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8009479257972574234, guid: 2a6a91d74d4e1f028a595281cba837d5, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 163850955067842564}
   m_SourcePrefab: {fileID: 100100000, guid: 2a6a91d74d4e1f028a595281cba837d5, type: 3}
+--- !u!1 &8372104662721349280 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8009479257972574234, guid: 2a6a91d74d4e1f028a595281cba837d5, type: 3}
+  m_PrefabInstance: {fileID: 1948037906680860346}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &163850955067842564
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8372104662721349280}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5a72ba64a31d49f48004252473f45ddd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Heraldo.Level.HealthPickup
+  ObjetivoRelacionado: 0
+  HealthCount: 20

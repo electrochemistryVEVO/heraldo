@@ -8,6 +8,7 @@ namespace Heraldo.Global.Enums
         CHANGE_LOSE_CONDITION,
         SWITCH_SCENE,
         COMPLETE_OBJECTIVE,
-        TRIGGER_CUTSCENE
+        TRIGGER_CUTSCENE,
+        KILL_COMMANDER
     }
 }

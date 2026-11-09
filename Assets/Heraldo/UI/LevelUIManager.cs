@@ -1,12 +1,16 @@
 using System;
 using System.Collections;
 using System.Threading;
+using System.Threading.Tasks;
 using Heraldo.Cutscenes;
+using Heraldo.Global;
 using Heraldo.Global.Structs;
 using Heraldo.UI.Components;
 using JetBrains.Annotations;
+using LitMotion;
+using LitMotion.Extensions;
 using NUnit.Framework.Constraints;
-using TMPro;
+using TMPro; 
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -180,28 +184,57 @@ namespace Heraldo.UI
         
         
 
-        IEnumerator _FadeToBlack(float seconds)
+
+        public async Task FadeToBlack(float seconds)
         {
-            float secs = 0;
-            while (secs < seconds)
-            {
-                blackFadePanel.color = Color.Lerp(blackFadePanel.color,
-                    new Color(blackFadePanel.color.r,
+            await LMotion.Create(0, 1f, seconds)
+                .Bind(alpha =>
+                {
+                    blackFadePanel.color = new Color(blackFadePanel.color.r,
                         blackFadePanel.color.g,
                         blackFadePanel.color.b,
-                        1f),secs/seconds);
-                secs += Time.deltaTime;
-                yield return new WaitForEndOfFrame();
-            }
-
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-            SceneManager.LoadScene(_losingScene);
+                        alpha);
+                })
+                .AddTo(blackFadePanel.gameObject)
+                .ToAwaitable();
+        }
+        
+        public async Task FadeFromBlack(float seconds)
+        {
+            await LMotion.Create(1f, 0, seconds)
+                .Bind(alpha =>
+                {
+                    blackFadePanel.color = new Color(blackFadePanel.color.r,
+                        blackFadePanel.color.g,
+                        blackFadePanel.color.b,
+                        alpha);
+                })
+                .AddTo(blackFadePanel.gameObject)
+                .ToAwaitable();
         }
 
-        public void FadeToBlack(float seconds)
+        public Task FailLevel()
         {
-            Coroutine c1 = StartCoroutine(_FadeToBlack(seconds));
+            return FadeToBlack(2f).ContinueWith(async t1 =>
+            {
+                await Awaitable.MainThreadAsync();
+                SceneManager.LoadScene(_losingScene);
+            });
+        }
+
+        public Task NextLevel(GameSaveData saveData)
+        {
+            saveData.SetTimeString(dayTimeText.text.Split(' ')[0]);
+            JsonParser.WriteSaveData(saveData);
+            _losingScene = saveData.lastScene;
+            return FailLevel();
+        }
+
+        public Task EndGame()
+        {
+            JsonParser.DeleteSaveData();
+            _losingScene = "Scenes/MainMenu";
+            return FailLevel();
         }
 
         public void ChangeLoseCondition(string scnToLoad)

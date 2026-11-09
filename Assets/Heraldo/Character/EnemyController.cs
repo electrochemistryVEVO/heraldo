@@ -4,8 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
-using Heraldo.Character.Enemy;
+using Heraldo.Character.Enemy; 
 using Heraldo.Character.Pathfinding;
+using Heraldo.Global.Enums;
 using Heraldo.Global.Structs;
 using Heraldo.Weapon;
 using StarterAssets;
@@ -28,7 +29,8 @@ namespace Heraldo.Character
         ENGAGE,
         SEEK,
         SEEK_GUARD,
-        DEAD
+        DEAD,
+        ENGAGE_ROUTE
     }
     
 
@@ -41,6 +43,7 @@ namespace Heraldo.Character
         
         private static readonly int Speed = Animator.StringToHash("speed");
         private static readonly int IsDead = Animator.StringToHash("isDead");
+        private static readonly int SpecialAnim = Animator.StringToHash("SpecialAnim");
 
         public int MaxHealth = 100;
         public bool IsAlly = false;
@@ -80,7 +83,8 @@ namespace Heraldo.Character
         public Guid ID => _id;
 
         private Routine? _overdriveRoutine;
-        
+        public bool HasOverdriveRoutine => _overdriveRoutine.HasValue;
+
         private Routine? _currentRoutine;
         public Routine? CurrentRoutine => _currentRoutine;
         
@@ -121,8 +125,9 @@ namespace Heraldo.Character
             get => _enemyState;
             set
             {
+                var prevValue = _enemyState;
                 _enemyState = value;
-                ////Debug.Log("[ENEMY] "+name+" state: "+_enemyState);
+                Debug.Log("[ENEMY] "+name+" state: "+_enemyState);
                 switch (_enemyState)
                 {
                     case EnemyState.DEAD:
@@ -136,6 +141,13 @@ namespace Heraldo.Character
                     case EnemyState.HUNT:
                         Transition(null);
                         _activeMovementTask = SearchForPlayer();
+                        break;
+                    case EnemyState.ENGAGE_ROUTE:
+                        if (prevValue != value)
+                        {
+                            Transition(null); 
+                        }
+                        HuntDownPlayer();
                         break;
                 }
             }
@@ -220,7 +232,7 @@ namespace Heraldo.Character
                     _inputs.sprint = true;
                 }
                 else _inputs.sprint = false;
-                if (move.magnitude <= DIST_THRESHOLD)
+                if (move.magnitude <= _firstPerson.MoveSpeed*Time.deltaTime + DIST_THRESHOLD)
                 {
                     _inputs.move = Vector2.zero;
                     _pathNodeReached.TrySetResult(true);
@@ -382,21 +394,6 @@ namespace Heraldo.Character
             if(routine.HasValue)
                 Gizmos.DrawLine(transform.position,routine.Value.NodeList[0]);
             
-            if (_activeRoute is not null)
-            {
-                Vector3 prevPathPos = _activeRoute[0].realPos;
-                foreach (var path in _activeRoute)
-                {
-                    if (!path.dirty) continue;
-                    Gizmos.color = _gizmoColor;
-                    Gizmos.DrawLine(prevPathPos,path.realPos);
-                    Gizmos.DrawSphere(path.realPos,5f);
-                    Gizmos.color = Color.red;
-                    if(path.arrived)Gizmos.DrawSphere(path.realPos,4);
-                    prevPathPos = path.realPos;
-                } 
-            }
-            
             if (_walkToPoint.HasValue)
             { 
                 Gizmos.color = Color.green;
@@ -407,6 +404,33 @@ namespace Heraldo.Character
             {
                 Gizmos.DrawLine(transform.position,_overdriveRoutine.Value.NodeList[0]);
                 Gizmos.DrawWireSphere(_overdriveRoutine.Value.NodeList[0],5f);
+            }
+        }
+
+        private void OnDrawGizmos()
+        {
+            if (_activeRoute is not null)
+            {
+                Vector3 prevPathPos = _activeRoute[0].realPos;
+                foreach (var path in _activeRoute)
+                {
+                    Gizmos.color = _gizmoColor;
+                    Gizmos.DrawLine(prevPathPos,path.realPos);
+                    Gizmos.DrawSphere(path.realPos,5f);
+                    Gizmos.color = Color.red;
+                    if(path.arrived)Gizmos.DrawSphere(path.realPos,4);
+                    prevPathPos = path.realPos;
+                } 
+            }
+            if(_aimAtPoint.HasValue)
+            {
+                Gizmos.color = CanPhysicallyReach(_aimAtPoint.Value) ? Color.aliceBlue : Color.red;
+                Gizmos.DrawLine(transform.position, _aimAtPoint.Value);
+            }
+            if (_walkToPoint.HasValue)
+            { 
+                Gizmos.color = Color.green;
+                Gizmos.DrawSphere(new Vector3(_walkToPoint.Value.x,transform.position.y,_walkToPoint.Value.y),2);
             }
         }
 
@@ -518,7 +542,7 @@ namespace Heraldo.Character
             // }
             WpnHandler.Target = player.transform;
             AskWeaponHandler().Wait();
-            Enemy_State = EnemyState.ENGAGE;
+            //Enemy_State = EnemyState.ENGAGE;
             _aimAtPoint = player.transform.position;
             WpnHandler.Attack(player.transform);
             //if(_fireTimeElapsed)StartCoroutine(AttackEnemy(player.transform.position));
@@ -550,35 +574,38 @@ namespace Heraldo.Character
         bool CanPhysicallyReach(Vector3 pos)
         {
             NavMeshHit hit;
-            return !_agent.Raycast(pos,out hit);
+            bool result = !_agent.Raycast(pos,out hit);
+            return result;
         }
-
         private async Task SearchForPlayer()
         {
-            //Debug.Log("Searching for player");
-            //Interrumpir
-            /*if(Enemy_State != EnemyState.HUNT)
+            if(_aimAtPoint.HasValue)
             {
-                _pathNodeReached.TrySetResult(false);
-                _pathNodeReached = new();
-            }
-            _walkToPoint = null;*/
-            //Trace path to last known position of player
-            if(_aimAtPoint!=null)
-            {
-                _enemyState = EnemyState.HUNT;
-                //_overdriveRoutine = new Routine(new[] { _aimAtPoint.Value }, false);
+                Debug.Log("[SEARCH-FOR-PLAYER] _aimAtPoint = " + _aimAtPoint.Value); 
                  bool notInterrupted = CanPhysicallyReach(_aimAtPoint.Value)
-                     ? await WalkToPoint(_aimAtPoint.Value)
-                     : await CalculatePath(_aimAtPoint.Value);
-                //bool notInterrupted = await WalkToPoint(_aimAtPoint.Value);
-                if (notInterrupted) return;
-            } 
-            //Debug.Log("Player lost");
-            Enemy_State = EnemyState.PATROL;
-            ////Debug.Log("Calculate path to "+ (_aimAtPoint.ToString() ?? "nothing"));
-            //Debug.Log("This part causes a memory leak");
-            
+                     ? await WalkToPoint(new Vector2(_aimAtPoint.Value.x,_aimAtPoint.Value.z))
+                     : await CalculatePath(_aimAtPoint.Value); 
+                if (!notInterrupted) return;
+            }  
+            if(_enemyState == EnemyState.HUNT)Enemy_State = EnemyState.PATROL; 
+        }
+
+        private void HuntDownPlayer()
+        {
+            if (_aimAtPoint.HasValue)
+            {
+                bool reachable = CanPhysicallyReach(_aimAtPoint.Value);
+                if (reachable)
+                {
+                    Transition(null);
+                    _walkToPoint = new Vector2(_aimAtPoint.Value.x, _aimAtPoint.Value.z);
+                }
+                else if (_activeMovementTask is null || _activeMovementTask.IsCompleted)
+                {
+                    Debug.Log("[HUNT-DOWN-PLAYER] Yo los pathfindeo pijes");
+                    _activeMovementTask = CalculatePath(_aimAtPoint.Value);
+                }
+            }
         }
 
         public void OnTakeDamage(DamageInfo damage)
@@ -589,11 +616,10 @@ namespace Heraldo.Character
                 if (Health == 0) return;
                 //Debug.Log("Health: " + Health);
                 //Search for the one who shot me
-                if (damage.enemyPos is not null)
+                if (damage.enemyPos is not null && (Enemy_State != EnemyState.PATROL || _overdriveRoutine is null))
                 {
                     _aimAtPoint = damage.enemyPos;
-                    Transition(null);
-                    _activeMovementTask = SearchForPlayer();
+                    Enemy_State = EnemyState.HUNT;
                 }
             }
         }
@@ -650,7 +676,7 @@ namespace Heraldo.Character
                         Debug.Log("[CALCULATE-PATH] "+name+": "
                                   +(_agent.path.status == NavMeshPathStatus.PathComplete ? "Arrived " : "Partially arrived ")
                                   +" GetPath with pathList count = "+pathList.Count);
-                        pathList.RemoveAt(0);
+                        //pathList.RemoveAt(0);
                         return pathList;
                     }
                 }
@@ -658,7 +684,7 @@ namespace Heraldo.Character
                 if (pathList.Count <= 1)
                     throw new Exception("Timeout reach for path calculation");
                 //Debug.Log("[CALCULATE-PATH] "+name+": Left GetPath with pathList count = "+pathList.Count);
-                pathList.RemoveAt(0);
+                //pathList.RemoveAt(0);
                 return pathList;
                 //Delete first corner (it's the position of the npc)
 
@@ -679,7 +705,8 @@ namespace Heraldo.Character
         public void BeAlerted(Vector3 position, bool duringCombat = false)
         {
             //if(duringCombat)//Debug.Log("[ALERTED] Enemy alerted to position "+position);
-            if ((_enemyState != EnemyState.ENGAGE) ^ duringCombat)
+            if ((_enemyState != EnemyState.ENGAGE && _enemyState != EnemyState.ENGAGE_ROUTE) 
+                ^ duringCombat)
             {
                 OnTakeDamage(new DamageInfo(0,position));
             }
@@ -698,6 +725,11 @@ namespace Heraldo.Character
         {
             WpnHandler.SwitchWeapon(index);
             _inputs.sprint = true;
+        }
+
+        public void StartSpecialAnim(SpecialAnims specialAnims)
+        {
+            NpcAnimator.SetInteger(SpecialAnim,(int)specialAnims);
         }
 
         public async Task<bool> WalkToPoint(Vector2 point)
