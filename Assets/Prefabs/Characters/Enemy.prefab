@@ -454,6 +454,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Heraldo.Character.EnemyController
   MaxHealth: 100
   IsAlly: 0
+  IsCommander: 0
   RespiteTime: 2.5
   TurningSpeed: 0.5
   Troop: {fileID: 0}
@@ -1413,6 +1414,10 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 8417361359673230750, guid: f49ac41e7411ce645b732eb4b9446169, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 43ab5c34775f9b3c69ae15c72dcb0ae1, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1447,6 +1452,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Heraldo.Weapon.WpnPickup
   ObjetivoRelacionado: 0
+  WeaponPrerequisite: -1
   WeaponIndex: 0
   AmmoCount: 2
 --- !u!136 &8576665225460743218
@@ -1552,6 +1558,10 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 8417361359673230750, guid: f49ac41e7411ce645b732eb4b9446169, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 43ab5c34775f9b3c69ae15c72dcb0ae1, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:

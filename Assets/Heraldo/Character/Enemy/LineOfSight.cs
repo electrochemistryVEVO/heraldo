@@ -126,6 +126,9 @@ namespace Heraldo.Character.Enemy
                 }
             }
             //Change state to hunt automatically
+            //TLDR if enemy is ally they should never ever hunt down enemies
+            //Allies stick to their fortress, enemies hunt them down
+            if(npc.IsAlly)return;
             if (npc.Enemy_State == EnemyState.ENGAGE || npc.Enemy_State == EnemyState.ENGAGE_ROUTE
                 || (npc.Enemy_State == EnemyState.PATROL && npc.HasOverdriveRoutine))
             {

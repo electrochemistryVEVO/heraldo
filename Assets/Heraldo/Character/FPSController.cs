@@ -55,6 +55,9 @@ namespace Heraldo.Character
         private LayerMask _wpnPickupMask;
         private LayerMask _enemyMask;
         
+        //Cutscenes
+        private CutsceneManager _cutsceneManager;
+        
         //UI
         private LevelUIManager _uiCanvas;
         
@@ -100,6 +103,7 @@ namespace Heraldo.Character
             _ogWalkSpeed = _controller.MoveSpeed;
             _ogSprintSpeed = _controller.SprintSpeed;
             _ogRotationSpeed = _controller.RotationSpeed;
+            _cutsceneManager = GameObject.FindWithTag("CutsceneManager").GetComponent<CutsceneManager>();
             
             LoadSaveData();
         }
@@ -128,11 +132,14 @@ namespace Heraldo.Character
 
         void Die()
         {
-            //Animation that makes player tumble down
-            //Disable input
-            _playerInput.enabled = false;
-            //Fade to black
-            _uiCanvas.FailLevel();
+            if (!_cutsceneManager.CutsceneMode)
+            {
+                //Animation that makes player tumble down
+                //Disable input
+                _playerInput.enabled = false;
+                //Fade to black
+                _uiCanvas.FailLevel();
+            }
         }
         
         public void TriggerPlayerInput(bool value)
@@ -220,12 +227,19 @@ namespace Heraldo.Character
                 }
             }
 
+            GameObject obj;
             Interactable interactable = nearWpns[bestI].gameObject.GetComponent<Interactable>();
             if (interactable)
             {
                 _uiCanvas.SeeInteractable(interactable.GetDescription());
+                interactable.OnHover();
+                if (_nearestInteractableRef.TryGetTarget(out obj) && obj != interactable.gameObject)
+                {
+                    Interactable prevInteractable = obj.GetComponent<Interactable>();
+                    prevInteractable.OnLeave();
+                }
+                _nearestInteractableRef.SetTarget(nearWpns[bestI].gameObject);
             }
-            _nearestInteractableRef.SetTarget(nearWpns[bestI].gameObject);
         }
         //Recoger armas
         public int PickupWeapon(int ammoCount,int weaponIndex)

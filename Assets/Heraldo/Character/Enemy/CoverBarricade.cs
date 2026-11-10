@@ -56,6 +56,14 @@ namespace Heraldo.Character.Enemy
             return _spotPositions.Any((val) => val.occupier.IsUnityNull());
         }
 
+        public void VacateSpots()
+        {
+            for (int i=0;i<_spotPositions.Length;i++)
+            {
+                _spotPositions[i].occupier = null;
+            }
+        }
+
         public bool IsInPhase(BattlePhase phase)
         {
             //If it's enemy, it has to be higher

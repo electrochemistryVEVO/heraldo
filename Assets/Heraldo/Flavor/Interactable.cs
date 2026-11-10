@@ -14,6 +14,10 @@ namespace Heraldo.Flavor
         protected ObjectiveManager _objectiveManager;
         protected CutsceneManager _cutsceneManager;
 
+        public virtual void OnHover() { }
+
+        public virtual void OnLeave() { }
+
         public virtual string GetDescription()
         {
             return "Nondescript";}

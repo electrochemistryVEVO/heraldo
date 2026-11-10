@@ -47,6 +47,7 @@ namespace Heraldo.Character
 
         public int MaxHealth = 100;
         public bool IsAlly = false;
+        public bool IsCommander = false;
         public float RespiteTime = 2.5f;
         public float TurningSpeed = 0.5f;
         public TroopController Troop;
@@ -127,7 +128,7 @@ namespace Heraldo.Character
             {
                 var prevValue = _enemyState;
                 _enemyState = value;
-                Debug.Log("[ENEMY] "+name+" state: "+_enemyState);
+                if(_enemyState!=EnemyState.ENGAGE)Debug.Log("[ENEMY] "+name+" state: "+_enemyState);
                 switch (_enemyState)
                 {
                     case EnemyState.DEAD:
@@ -496,7 +497,8 @@ namespace Heraldo.Character
                         }
                         ////Debug.Log("Siguiente objetivo: (" + path.pos_x + ";" + path.pos_y + ")");
                         _walkToPoint = new Vector2(path.realPos.x, path.realPos.z);
-                        //Debug.Log("[CALCULATE-PATH] "+name+": Walking to position - "+_walkToPoint);
+                        _pathNodeReached = new TaskCompletionSource<bool>();
+                        Debug.Log("[CALCULATE-PATH] "+name+": Walking to position - "+_walkToPoint);
                         bool reached = await _pathNodeReached.Task;
                         path.dirty = false;
                         if (!reached)
@@ -510,7 +512,6 @@ namespace Heraldo.Character
                             arrived = true;
                             break;
                         }
-                        _pathNodeReached = new TaskCompletionSource<bool>();
                         //path = path.next;
                         i++;
                     }
@@ -610,13 +611,15 @@ namespace Heraldo.Character
 
         public void OnTakeDamage(DamageInfo damage)
         {
-            if (_enemyState != EnemyState.DEAD)
+            if (!IsCommander && _enemyState != EnemyState.DEAD)
             {
                 Health = Math.Max(Health-damage.damage,0);
                 if (Health == 0) return;
                 //Debug.Log("Health: " + Health);
                 //Search for the one who shot me
-                if (damage.enemyPos is not null && (Enemy_State != EnemyState.PATROL || _overdriveRoutine is null))
+                //Debug.Log("[TAKE-DAMAGE] "+name+" state: "+Enemy_State+" and _overdriveRoutine is "+(_overdriveRoutine is null ? "null" : "not null"));
+                if (!IsAlly
+                    && damage.enemyPos is not null && ((Enemy_State != EnemyState.PATROL || _overdriveRoutine is null)))
                 {
                     _aimAtPoint = damage.enemyPos;
                     Enemy_State = EnemyState.HUNT;

@@ -152,6 +152,7 @@ namespace Heraldo.Character.Enemy
 
         private void AssignPositions()
         {
+            VacateAllSpots();
             List<EnemyController> troopers = _allyTroopers.Concat(_enemyTroopers).ToList();
             foreach (var trooper in troopers)
             {
@@ -166,10 +167,19 @@ namespace Heraldo.Character.Enemy
             _firstAssignment = false;
             //StartCoroutine(WriteToJson(troopers));
         }
+
+        private void VacateAllSpots()
+        {
+            foreach (var coverBarricade in _barricadeList.Concat(_coverList))
+            {
+                coverBarricade.VacateSpots();
+            }
+        }
         
         //Workaround
         public void RespawnToTop()
         {
+            VacateAllSpots();
             foreach (var trooper in _allyTroopers)
             {
                 if (trooper == null)
