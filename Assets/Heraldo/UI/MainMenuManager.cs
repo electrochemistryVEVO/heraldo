@@ -13,8 +13,10 @@ namespace Heraldo.UI
         public Button QuitButton;
         public Button StartButton;
         public Button ContinueButton;
+        public Button ConfirmButton;
         public GameObject LoadingScreen;
         public GameObject LandingScreen;
+        public GameObject ConfirmScreen;
 
         private GameSaveData _saveData;
         
@@ -23,7 +25,14 @@ namespace Heraldo.UI
             Debug.Log("Load level button pressed");
             LoadingScreen.SetActive(true);
             LandingScreen.SetActive(false);
+            ConfirmScreen.SetActive(false);
             SceneManager.LoadSceneAsync(scn);
+        }
+
+        void OpenConfirmScreen()
+        {
+            LandingScreen.SetActive(false);
+            ConfirmScreen.SetActive(true);
         }
 
         void Quit()
@@ -42,7 +51,8 @@ namespace Heraldo.UI
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
             QuitButton.onClick.AddListener(Quit);
-            StartButton.onClick.AddListener(() => { JsonParser.DeleteSaveData(); LoadLevel(); });
+            StartButton.onClick.AddListener(OpenConfirmScreen);
+            ConfirmButton.onClick.AddListener(() => { JsonParser.DeleteSaveData(); LoadLevel(); });
             if (JsonParser.SaveFileExists())
             {
                 string scn = "Scenes/MainScene";

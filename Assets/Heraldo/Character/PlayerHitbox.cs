@@ -8,7 +8,6 @@ namespace Heraldo.Character
     {
         //Workaround que tuve que hacer para que el hitbox del jugador registrara los golpes
         public FPSController controller;
-        public Collider crouchHitbox;
         private CapsuleCollider _hitbox;
         private bool _crouched = false;
 

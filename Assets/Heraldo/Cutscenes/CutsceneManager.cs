@@ -101,13 +101,8 @@ namespace Heraldo.Cutscenes
                 case CutsceneActionType.ADVANCE_SPEECH:
                 {
                     Awaitable.MainThreadAsync();
-                    var part = currentCutscene.parts[_speechIndex++];
-                    if (part.actor >= 0)
-                    {
-                        var actor = actorList[part.actor];
-                        _uiCanvas.CutsceneText(actor.name,part.text); 
-                    }
-                    else _uiCanvas.CutsceneText();
+                    var part = currentCutscene.parts[_speechIndex++]; 
+                    _uiCanvas.CutsceneText(part.actor,part.text); 
                     return Task.Delay((int)MathF.Round(action.howMuch*1000));
                 }
                 case CutsceneActionType.PLAYER_ROTATE_TOWARDS:

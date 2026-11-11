@@ -40,13 +40,19 @@ namespace Heraldo.UI
         private Color ENEMY_COLOR = Color.red;
         private bool showFlavorText = false;
         private string _losingScene = "Scenes/RetryScreen";
+        //Trampita xd
+        private bool _popupEnabled = true;
         
 
         private Material _crosshairMaterial;
         
         public void OnSubjectChange([CanBeNull] GameObject subject,bool isNull=false)
         {
-            if (isNull) crosshair.color = Color.white;
+            if (isNull)
+            {
+                crosshair.color = Color.white;
+                crosshairText.alpha = 0;
+            }
             else
             {
                 if (subject.layer == LayerMask.NameToLayer("Enemy"))
@@ -67,7 +73,7 @@ namespace Heraldo.UI
         public void SeeInteractable([CanBeNull] string str)
         {
             _interactText.text = str ?? "";
-            if (str is null)
+            if (str is null || !_popupEnabled)
             {
                 interactPopup.SetActive(false);
             }
@@ -94,10 +100,14 @@ namespace Heraldo.UI
             ammoCount.gameObject.SetActive(!on);
             ammoLoad.gameObject.SetActive(!on);
             wpnDescriptionText.gameObject.SetActive(!on);
+            crosshairText.gameObject.SetActive(!on);
             objectivePopup.gameObject.SetActive(!on);
             interactPopup.SetActive(!on);
+            _popupEnabled = !on;
             dayTimeText.gameObject.SetActive(!on);
             dayTimeClock.gameObject.SetActive(!on);
+            crosshair.gameObject.SetActive(!on);
+            
         }
  
         public void FlavorText(string text)
@@ -242,7 +252,7 @@ namespace Heraldo.UI
         public Task EndGame()
         {
             JsonParser.DeleteSaveData();
-            _losingScene = "Scenes/MainMenu";
+            _losingScene = "Scenes/ClosingScene";
             return FailLevel();
         }
 

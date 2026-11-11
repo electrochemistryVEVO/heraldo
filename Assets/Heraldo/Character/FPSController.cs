@@ -211,6 +211,10 @@ namespace Heraldo.Character
             if (numWpns <= 0)
             {
                 _uiCanvas.SeeInteractable(null);
+                GameObject obj1;
+                if (_nearestInteractableRef.TryGetTarget(out obj1) 
+                   && obj1 != null)
+                    obj1.SendMessage("OnLeave",SendMessageOptions.DontRequireReceiver);
                 return;
             }
             double bestDistance =  double.MaxValue;
@@ -233,7 +237,9 @@ namespace Heraldo.Character
             {
                 _uiCanvas.SeeInteractable(interactable.GetDescription());
                 interactable.OnHover();
-                if (_nearestInteractableRef.TryGetTarget(out obj) && obj != interactable.gameObject)
+                if (_nearestInteractableRef.TryGetTarget(out obj) 
+                    && obj != null
+                    && obj != interactable.gameObject)
                 {
                     Interactable prevInteractable = obj.GetComponent<Interactable>();
                     prevInteractable.OnLeave();

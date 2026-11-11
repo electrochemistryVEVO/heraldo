@@ -46,7 +46,7 @@ namespace Heraldo.Cutscenes
     [System.Serializable]
     public struct CutscenePart //: UnityEngine.Object
     {
-        public int actor;
+        public string actor;
         public string text;
         public string soundbyteId;
     }
