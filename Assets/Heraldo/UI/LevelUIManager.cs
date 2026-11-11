@@ -252,7 +252,7 @@ namespace Heraldo.UI
         public Task EndGame()
         {
             JsonParser.DeleteSaveData();
-            _losingScene = "Scenes/ClosingScene";
+            _losingScene = "Scenes/ClosingScreen";
             return FailLevel();
         }
 

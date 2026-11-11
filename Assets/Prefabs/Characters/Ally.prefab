@@ -149,6 +149,10 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 1672650395449667797, guid: 2a6a91d74d4e1f028a595281cba837d5, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: f848958d690b55fa2beb43867d567f04, type: 2}
     - target: {fileID: 2057274106017942535, guid: 2a6a91d74d4e1f028a595281cba837d5, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
@@ -180,6 +184,14 @@ PrefabInstance:
     - target: {fileID: 5091107231566671745, guid: 2a6a91d74d4e1f028a595281cba837d5, type: 3}
       propertyPath: MaxHealth
       value: 5000
+      objectReference: {fileID: 0}
+    - target: {fileID: 5558517781356446989, guid: 2a6a91d74d4e1f028a595281cba837d5, type: 3}
+      propertyPath: InitialModule.startColor.maxColor.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5558517781356446989, guid: 2a6a91d74d4e1f028a595281cba837d5, type: 3}
+      propertyPath: InitialModule.startColor.maxColor.r
+      value: 0.17580104
       objectReference: {fileID: 0}
     - target: {fileID: 6312608600611663304, guid: 2a6a91d74d4e1f028a595281cba837d5, type: 3}
       propertyPath: m_Layer

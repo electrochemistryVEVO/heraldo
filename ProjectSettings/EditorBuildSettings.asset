@@ -23,6 +23,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/ScnPhase2.unity
     guid: 261aae45216273ad1adde08292f49d91
+  - enabled: 1
+    path: Assets/Scenes/ClosingScreen.unity
+    guid: f079ef7a09260bd0c8ffe076d353e0b3
   m_configObjects:
     com.unity.dt.app-ui: {fileID: 11400000, guid: 99f9c9493070a9d4c979a8fec7c5a8d3, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

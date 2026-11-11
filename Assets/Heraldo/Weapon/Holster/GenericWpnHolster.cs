@@ -11,7 +11,8 @@ namespace Heraldo.Weapon.Holster
     {
         private static readonly int WpnEquipped = Animator.StringToHash("wpnEquipped");
         private static readonly int WpnSelected = Animator.StringToHash("wpnSelected");
-        
+        private static readonly int IsCarryingCorpse = Animator.StringToHash("isCarryingCorpse");
+
         private struct Holster
         {
             public int AmmoCount;
@@ -124,6 +125,7 @@ namespace Heraldo.Weapon.Holster
         public void HoldCorpse()
         {
             //Switch to corpse
+            _charAnimator.SetBool(IsCarryingCorpse,true);
             _holdingCorpse = true;
             Hold();
             _character.EquipWeapon(_corpse); 
@@ -132,6 +134,7 @@ namespace Heraldo.Weapon.Holster
         public void DropCorpse()
         {
             //Generate element to pick up again
+            _charAnimator.SetBool(IsCarryingCorpse,false);
             _holdingCorpse = false;
             GameObject obj = Instantiate(corpsePrefab);
             obj.transform.position = _character.transform.TransformPoint(Vector3.forward * 10);
