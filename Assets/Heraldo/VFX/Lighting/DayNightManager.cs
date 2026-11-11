@@ -1,8 +1,10 @@
 using System;
 using System.Collections;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Heraldo.Flavor;
+using Heraldo.Global;
 using Heraldo.Global.SO;
 using Heraldo.Global.Structs;
 using Heraldo.UI;
@@ -24,7 +26,7 @@ namespace Heraldo.VFX.Lighting
         private LevelUIManager _uiCanvas;
         private HistoricalBattleManager _historicalBattleManager;
         private Task _timeUpdateTask;
-        private TaskCompletionSource<bool> _timeUpdateCancel = new();
+        private CancellationTokenSource _timeUpdateCancel = new();
         private HistoricalEvent[] _events;
 
         private bool _stopped = false;
@@ -32,6 +34,7 @@ namespace Heraldo.VFX.Lighting
         
         private void Awake()
         {
+            LoadSaveData();
             
             _horaMins = ParseTime(hora);
             _uiCanvas = GameObject.FindWithTag("UI Canvas").GetComponent<LevelUIManager>();
@@ -39,16 +42,26 @@ namespace Heraldo.VFX.Lighting
             _events = BattleScenario.Events.ToArray();
         }
 
+        private void LoadSaveData()
+        {
+            if (!JsonParser.SaveFileExists()) return;
+            GameSaveData? data = JsonParser.ReadSaveData();
+            if (!data.HasValue) return;
+            if (data.Value.timeString == null) return;
+            hora = data.Value.timeString;
+        }
+
         private void Start()
         {
             //cubemapMaterial = RenderSettings.skybox;
             //RenderSettings.skybox.Lerp(cubemapMaterial,sunMaterial, 0.5f);
-            _timeUpdateTask = Task.Run(TimeUpdate);
+            StartClock();
             _uiCanvas.DayTimeText(hora);
         }
 
         public static int ParseTime(string tim)
         {
+            Debug.Log("Input string: "+tim);
             string[] str = tim.Split(':');
             string hrSplit = str[0];
             string minSplit = str[1];
@@ -60,9 +73,17 @@ namespace Heraldo.VFX.Lighting
             return (mins / 60).ToString().PadLeft(2,'0') 
                    + ":" + (mins % 60).ToString().PadLeft(2,'0');
         }
+        
+        public void StartClock()
+        {
+            if (!_stopped)
+            {
+                _ = TimeUpdate();
+            }
+        }
 
         async Task TimeUpdate()
-        {
+        { 
             await Awaitable.MainThreadAsync();
             try
             {
@@ -76,13 +97,8 @@ namespace Heraldo.VFX.Lighting
                         _events[i].completed = true;
                         _historicalBattleManager.HandleHistoricalEvent(currentEvent);
                     }
-
-                    Task t1 = new Task(() => Awaitable.WaitForSecondsAsync(simulatedToRealSeconds));
-                    await Task.WhenAny(new Task[]
-                    {
-                        Task.Delay((int)MathF.Round(simulatedToRealSeconds * 1000)),
-                        _timeUpdateCancel.Task
-                    });
+                    Debug.Log("[TIME-MANAGER] Tick.");
+                    await Awaitable.WaitForSecondsAsync(simulatedToRealSeconds);
                     if (_stopped || !Application.isPlaying)
                     {
                         Debug.Log("[TIME-MANAGER] Timer stopped.");
@@ -104,7 +120,7 @@ namespace Heraldo.VFX.Lighting
             if (!_stopped)
             {
                 _stopped = true;
-                _timeUpdateCancel.SetResult(true);
+                _timeUpdateCancel.Cancel();
                 _uiCanvas.StopOrResumeDayTimeText(false);
             }
         }
@@ -114,9 +130,10 @@ namespace Heraldo.VFX.Lighting
             if (_stopped)
             {
                 _stopped = false;
+                _timeUpdateCancel.Dispose();
                 _timeUpdateCancel = new();
                 _uiCanvas.StopOrResumeDayTimeText(true);
-                _timeUpdateTask = Task.Run(TimeUpdate);
+                _ = TimeUpdate();
             }
         }
 

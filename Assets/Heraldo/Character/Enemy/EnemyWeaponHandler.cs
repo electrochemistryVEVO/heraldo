@@ -6,6 +6,7 @@ using Heraldo.Cutscenes;
 using Heraldo.Global.Enums;
 using Heraldo.Weapon;
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace Heraldo.Character.Enemy
 {
@@ -22,12 +23,18 @@ namespace Heraldo.Character.Enemy
         private int _selectedIndex = 0;
         private GenericWeapon _selectedWeapon;
         private bool _fireTimeElapsed = true;
+        private NavMeshAgent _npcAgent;
 
         private void Awake()
         {
             _weapons = GetComponentsInChildren<GenericWeapon>();
-            _selectedWeapon = _weapons[_selectedIndex];
+            _npcAgent = npc.GetComponent<NavMeshAgent>();
             //SwitchWeapon(0);
+        }
+
+        private void Start()
+        {
+            SwitchWeapon(npc.currentWeapon.transform.GetSiblingIndex());
         }
 
         public void Attack(Transform player)
@@ -40,10 +47,13 @@ namespace Heraldo.Character.Enemy
                     StartCoroutine(AttackEnemy(player.position));
                 else
                 {
-                    Debug.Log("[WEAPON-HANDLER] "+npc.name+" cambia WalkToPoint a "+player.position);
-                    npc.WalkToPoint(new Vector2(player.position.x, player.position.z));
+                    Debug.Log("[WEAPON-HANDLER] " + npc.name + " cambia WalkToPoint a " + player.position);
+                    //NavMeshHit hit;
+                    npc.Enemy_State = EnemyState.ENGAGE_ROUTE;
+                    return;
                 }
             }
+            npc.Enemy_State = EnemyState.ENGAGE;
         }
 
         void AdaptToPlayer()
@@ -79,6 +89,7 @@ namespace Heraldo.Character.Enemy
 
         public void SwitchWeapon(int index)
         {
+            Debug.Log("[SWITCH-WEAPON] Weapon index: "+index);
             //Debug.Log(index);
             if(_selectedWeapon)
             {
@@ -88,6 +99,7 @@ namespace Heraldo.Character.Enemy
             _selectedWeapon = _weapons[index];
             _selectedWeapon.Enabled = true;
             _selectedWeapon.ShowHide();
+            npc.currentWeapon = _selectedWeapon;
             NpcAnimator.SetInteger(SelectedWeapon,index);
         }
 

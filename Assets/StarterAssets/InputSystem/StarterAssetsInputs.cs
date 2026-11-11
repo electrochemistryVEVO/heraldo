@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using Heraldo.Character;
 using UnityEngine;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -21,6 +23,13 @@ namespace StarterAssets
 		public bool cursorLocked = true;
 		public bool cursorInputForLook = true;
 
+		private Inputs _otherInputs;
+
+		private void Awake()
+		{
+			_otherInputs = GetComponent<Inputs>();
+		}
+
 #if ENABLE_INPUT_SYSTEM
 		public void OnMove(InputValue value)
 		{
@@ -42,7 +51,7 @@ namespace StarterAssets
 
 		public void OnSprint(InputValue value)
 		{
-			SprintInput(value.isPressed);
+			if(!_otherInputs.crouch)SprintInput(value.isPressed);
 		}
 #endif
 

@@ -454,6 +454,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Heraldo.Character.EnemyController
   MaxHealth: 100
   IsAlly: 0
+  IsCommander: 0
   RespiteTime: 2.5
   TurningSpeed: 0.5
   Troop: {fileID: 0}
@@ -533,13 +534,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3320575737433213150}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: 0.009982766, y: 0.016536376, z: 0.010010839, w: 0.99976337}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 7336877910395810987}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 1.125, y: 1.907, z: 1.166}
 --- !u!320 &8629413841677570927
 PlayableDirector:
   m_ObjectHideFlags: 0
@@ -662,6 +663,7 @@ MonoBehaviour:
   IsAlly: 0
   MaxMinRecoil: {x: 0, y: 0}
   Enabled: 1
+  Description: 
   ViewModel: {fileID: 2050558528216942176}
   hittableLayers:
     serializedVersion: 2
@@ -818,12 +820,13 @@ MonoBehaviour:
   ReloadTime: 1
   Range: 10
   MaxAmmo: -1
-  Damage: 50
+  Damage: 9999
   AmmoCount: -1
   IsAlly: 0
   MaxMinRecoil: {x: 0, y: 0}
   Enabled: 0
-  ViewModel: {fileID: 8730469847249001720}
+  Description: 
+  ViewModel: {fileID: 2050558528216942176}
   hittableLayers:
     serializedVersion: 2
     m_Bits: 8192
@@ -1411,6 +1414,10 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 8417361359673230750, guid: f49ac41e7411ce645b732eb4b9446169, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 43ab5c34775f9b3c69ae15c72dcb0ae1, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1445,6 +1452,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Heraldo.Weapon.WpnPickup
   ObjetivoRelacionado: 0
+  WeaponPrerequisite: -1
   WeaponIndex: 0
   AmmoCount: 2
 --- !u!136 &8576665225460743218
@@ -1550,6 +1558,10 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 8417361359673230750, guid: f49ac41e7411ce645b732eb4b9446169, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 43ab5c34775f9b3c69ae15c72dcb0ae1, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -1669,10 +1681,5 @@ PrefabInstance:
 --- !u!4 &8242445750873179714 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 10a0425ddc352fc489eba7a8f866aba0, type: 3}
-  m_PrefabInstance: {fileID: 8496522008442708393}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &8730469847249001720 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 10a0425ddc352fc489eba7a8f866aba0, type: 3}
   m_PrefabInstance: {fileID: 8496522008442708393}
   m_PrefabAsset: {fileID: 0}

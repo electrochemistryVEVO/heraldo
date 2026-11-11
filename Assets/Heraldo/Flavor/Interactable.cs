@@ -1,5 +1,6 @@
 using System;
 using Heraldo.Character;
+using Heraldo.Cutscenes;
 using Heraldo.Global.Enums;
 using Heraldo.Level;
 using UnityEngine;
@@ -9,7 +10,13 @@ namespace Heraldo.Flavor
     public class Interactable : MonoBehaviour
     {
         public ObjectiveID ObjetivoRelacionado = ObjectiveID.NO_OBJECTIVE;
-        private ObjectiveManager _objectiveManager;
+        public int WeaponPrerequisite = -1;
+        protected ObjectiveManager _objectiveManager;
+        protected CutsceneManager _cutsceneManager;
+
+        public virtual void OnHover() { }
+
+        public virtual void OnLeave() { }
 
         public virtual string GetDescription()
         {
@@ -18,7 +25,7 @@ namespace Heraldo.Flavor
         public void Awake()
         {
             _objectiveManager = GameObject.FindWithTag("ObjectiveManager").GetComponent<ObjectiveManager>();
-            
+            _cutsceneManager = GameObject.FindWithTag("CutsceneManager").GetComponent<CutsceneManager>();
         }
         
         public void Start()

@@ -34,13 +34,20 @@ namespace Heraldo.Flavor
         public void SwitchScene(HistoricalEvent @event)
         {
             objectiveManager.uiManager.ChangeLoseCondition(@event.newLosingScene);
-            objectiveManager.uiManager.FadeToBlack(2f);
+            objectiveManager.uiManager.FailLevel();
         }
 
         public void CompleteObjective(HistoricalEvent @event)
         {
             objectiveManager.CompleteObjective();
         }
+
+        public void KillCommander(HistoricalEvent @event)
+        {
+            MainTroop.KillNpc(@event.commander);
+        }
+        
+        
 
         public void HandleHistoricalEvent(HistoricalEvent @event)
         {
@@ -74,6 +81,11 @@ namespace Heraldo.Flavor
                 case HistoricalEventType.COMPLETE_OBJECTIVE:
                 {
                     CompleteObjective(@event);
+                    break;
+                }
+                case HistoricalEventType.KILL_COMMANDER:
+                {
+                    KillCommander(@event);
                     break;
                 }
             }

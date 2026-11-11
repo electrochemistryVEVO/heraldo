@@ -1,8 +1,9 @@
 using System;
 using System.Collections;
-using System.Threading.Tasks;
+using System.Threading.Tasks; 
 using Heraldo.Cutscenes;
 using Heraldo.Flavor;
+using Heraldo.Global;
 using Heraldo.Global.Enums;
 using Heraldo.Global.Structs;
 using Heraldo.UI;
@@ -20,6 +21,7 @@ namespace Heraldo.Character
 {
     public class FPSController : MonoBehaviour
     {
+        private static readonly int SpecialAnim = Animator.StringToHash("specialAnim");
         public float CrouchSpeed = 1.0f;
         public float CrouchGroundOffset;
         public float ProneSpeed = 0.5f;
@@ -33,6 +35,7 @@ namespace Heraldo.Character
         public GameObject Weapon;
         private GenericWeapon _currentWeapon;
         GenericWpnHolster _arsenal;
+        public int LastWpnIndex => _currentWeapon is not null ? _currentWeapon.transform.GetSiblingIndex() : -1;
         private WeakReference<GameObject> _nearestInteractableRef;
         
         //Components within the instance
@@ -52,11 +55,11 @@ namespace Heraldo.Character
         private LayerMask _wpnPickupMask;
         private LayerMask _enemyMask;
         
+        //Cutscenes
+        private CutsceneManager _cutsceneManager;
+        
         //UI
         private LevelUIManager _uiCanvas;
-        
-        //Debounces
-        private bool _shoot_deb = false;
         
         //Physics
         private Vector3 _prevPos;
@@ -100,11 +103,15 @@ namespace Heraldo.Character
             _ogWalkSpeed = _controller.MoveSpeed;
             _ogSprintSpeed = _controller.SprintSpeed;
             _ogRotationSpeed = _controller.RotationSpeed;
+            _cutsceneManager = GameObject.FindWithTag("CutsceneManager").GetComponent<CutsceneManager>();
+            
+            LoadSaveData();
         }
 
         private void Start()
         {
-
+            InitialSaveData();
+            
             Cursor.visible = false;
             Cursor.lockState = CursorLockMode.Locked;
             _uiCanvas.HealthText(_health,MaxHealth);
@@ -125,11 +132,14 @@ namespace Heraldo.Character
 
         void Die()
         {
-            //Animation that makes player tumble down
-            //Disable input
-            _playerInput.enabled = false;
-            //Fade to black
-            _uiCanvas.FadeToBlack(2f);
+            if (!_cutsceneManager.CutsceneMode)
+            {
+                //Animation that makes player tumble down
+                //Disable input
+                _playerInput.enabled = false;
+                //Fade to black
+                _uiCanvas.FailLevel();
+            }
         }
         
         public void TriggerPlayerInput(bool value)
@@ -171,10 +181,9 @@ namespace Heraldo.Character
                 Pickup();
             }
             //Disparar si se puede
-            if (_inputs.shoot && !_shoot_deb)
+            if (_inputs.shoot)
             {
-                //TODO: Erase _shoot_deb, there's already a cooldown system
-                _shoot_deb = true;
+                _inputs.shoot = false;
                 if (_currentWeapon !=null)
                 {
                     bool fired = _currentWeapon.Fire(_camera.position,_camera.TransformDirection(Vector3.forward),spreadMultiplier);
@@ -183,18 +192,13 @@ namespace Heraldo.Character
                         TimelineID id = _currentWeapon.ShootTimelineId();
                         if (id != TimelineID.CANT_SHOOT)
                         {
-                            StartCoroutine(WeaponCooldown(_currentWeapon.ReloadTime));
+                            StartCoroutine(_WeaponCooldown(_currentWeapon.ReloadTime));
                             timelineManager.timelineDict[id].Play();
                             _uiCanvas.AmmoText(_currentWeapon.AmmoCount); 
                         }
                     }
                 }
-                
                 //Debug.Log("Shot!");
-            }
-            else
-            {
-                if (!_inputs.shoot) _shoot_deb = false;
             }
         }
         //Antes de recoger, por motivos de UI, identificar el arma que esta mas cerca
@@ -223,12 +227,19 @@ namespace Heraldo.Character
                 }
             }
 
+            GameObject obj;
             Interactable interactable = nearWpns[bestI].gameObject.GetComponent<Interactable>();
             if (interactable)
             {
                 _uiCanvas.SeeInteractable(interactable.GetDescription());
+                interactable.OnHover();
+                if (_nearestInteractableRef.TryGetTarget(out obj) && obj != interactable.gameObject)
+                {
+                    Interactable prevInteractable = obj.GetComponent<Interactable>();
+                    prevInteractable.OnLeave();
+                }
+                _nearestInteractableRef.SetTarget(nearWpns[bestI].gameObject);
             }
-            _nearestInteractableRef.SetTarget(nearWpns[bestI].gameObject);
         }
         //Recoger armas
         public int PickupWeapon(int ammoCount,int weaponIndex)
@@ -285,8 +296,7 @@ namespace Heraldo.Character
             _uiCanvas.ShowHideAmmoText();
             //Destroy(Weapon);
         }
-
-        private IEnumerator WeaponCooldown(float seconds)
+        private IEnumerator _WeaponCooldown(float seconds)
         {
             _inputs.ModifyInputs(new string[]{"shoot","holster","pickup","select_weapon"},false);
             _uiCanvas.ToggleAmmoLoad(true);
@@ -300,7 +310,7 @@ namespace Heraldo.Character
             weapon.Enabled = true;
             _currentWeapon = weapon;
             weapon.ShowHide();
-            StartCoroutine(WeaponCooldown(0.7f));
+            StartCoroutine(_WeaponCooldown(0.7f));
             //weapon.ViewModel.transform.SetParent(HumanoidLeftGrip);
             _uiCanvas.ShowHideAmmoText(true);
             _uiCanvas.AmmoText(_currentWeapon.AmmoCount);
@@ -313,17 +323,47 @@ namespace Heraldo.Character
         }
         
         //Cutscene actions
-        public async Task RotateTowards(Vector3 target)
+        public async Task RotateTowards(Vector3 target,float time)
         {
+            Debug.Log("[ROTATE-TOWARDS] target: "+target);
             Quaternion q1 = transform.rotation;
-            q1.SetLookRotation(target - transform.position);
-            await LMotion.Create(transform.rotation, q1, 1f)
+            q1.SetLookRotation(Vector3.ProjectOnPlane(target - transform.position,transform.up));
+            await LMotion.Create(transform.rotation, q1, time)
                 .WithEase(Ease.OutSine)
                 .BindToRotation(transform)
                 .AddTo(gameObject)
                 .ToAwaitable();
-
         }
         
+        //Requests
+        public void ChangeCorpsePrefab(GameObject obj)
+        {
+            _arsenal.corpsePrefab = obj;
+        }
+        
+        //Save data
+        public GameSaveData returnSaveData(string nextScene)
+        {
+            return new GameSaveData(nextScene, _health, _arsenal.GetAmmoCounts()[0]);
+        }
+
+        private void InitialSaveData()
+        {
+            if (!JsonParser.SaveFileExists())
+                JsonParser.WriteSaveData(new GameSaveData("Scenes/MainScene", 
+                    MaxHealth, 
+                    _arsenal.GetAmmoCounts()[0],
+                    "04:50"));
+        }
+        
+        //Load data
+        private void LoadSaveData()
+        {
+            if (!JsonParser.SaveFileExists()) return;
+            GameSaveData? data = JsonParser.ReadSaveData();
+            if (!data.HasValue) return;
+            _health = data.Value.playerHealth;
+            _arsenal.SetAmmoCount(0,data.Value.rifleAmmo);
+        }
     }
 }

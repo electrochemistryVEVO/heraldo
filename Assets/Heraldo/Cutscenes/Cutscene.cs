@@ -20,7 +20,14 @@ namespace Heraldo.Cutscenes
         WAIT,
         FADE_TO_BLACK,
         FADE_FROM_BLACK,
-        ADVANCE_SPEECH
+        ADVANCE_SPEECH,
+        PLAYER_REPOSITION,
+        CHARACTER_REPOSITION,
+        DESTROY_OBJECT,
+        NEXT_LEVEL,
+        WAKE_ENEMIES,
+        CHARACTER_EQUIP_WEAPON,
+        SPAWN_OBJECT
     }
     [System.Serializable]
     public struct CutsceneAction
@@ -29,8 +36,11 @@ namespace Heraldo.Cutscenes
         public CutsceneActionType type;
         public int who; //Actor index
         public GameObject what;
+        public int whatIndex;
         public int where; //Spot index
+        public bool relativeToPlayer; //If position is relative to player
         public float howMuch;
+        public string text;
     }
     
     [System.Serializable]

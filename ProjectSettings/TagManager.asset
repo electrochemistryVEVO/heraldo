@@ -15,6 +15,7 @@ TagManager:
   - NPCSensesManager
   - _MainCamera
   - ObjectiveManager
+  - CutsceneManager
   layers:
   - Default
   - TransparentFX
