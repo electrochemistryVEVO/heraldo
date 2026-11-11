@@ -70,11 +70,6 @@ namespace Heraldo.Character.Enemy
                 if (respawnTaskQueue.Count > 0)respawnTaskQueue.Dequeue()();
             } 
         }
-        
-        private void OnGUI()
-        {
-            GUI.Label(new Rect(10f,10f,200f,50f),$"Enemy Count: {_enemyTroopers.Count}");
-        }
 
         private void Awake()
         {
