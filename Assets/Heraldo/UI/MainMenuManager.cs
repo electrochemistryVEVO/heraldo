@@ -20,7 +20,7 @@ namespace Heraldo.UI
 
         private GameSaveData _saveData;
         
-        void LoadLevel(string scn = "Scenes/MainScene")
+        void LoadLevel(string scn = "Scenes/MissionDebriefScene")
         {
             Debug.Log("Load level button pressed");
             LoadingScreen.SetActive(true);

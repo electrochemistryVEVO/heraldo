@@ -6,6 +6,7 @@ using Heraldo.Global.SO;
 using Heraldo.Global.Structs;
 using Heraldo.Level;
 using Heraldo.UI;
+using Heraldo.UI.Components;
 using Heraldo.VFX.Lighting;
 using NUnit.Framework;
 using UnityEngine;
@@ -35,6 +36,8 @@ namespace Heraldo.Level
             if(currentObjective.ID == ObjectiveID.NO_OBJECTIVE)
             {
                 currentObjective = objectiveMap.Objectives[0];
+                uiManager.SetMarkerPosition(currentObjective.HasToInteract
+                    ? MarkerType.OBJECTIVE_INTERACT : MarkerType.OBJECTIVE,currentObjective.Position);
                 uiManager.InitObjective(currentObjective);
             }
         } 
@@ -54,6 +57,8 @@ namespace Heraldo.Level
                 else uiManager.ObjectiveText(currentObjective);
             }
             positionBillboard.position = currentObjective.Position;
+            uiManager.SetMarkerPosition(currentObjective.HasToInteract
+            ? MarkerType.OBJECTIVE_INTERACT : MarkerType.OBJECTIVE,currentObjective.Position);
             _currentZone = objectiveZones.Find(val => val.objectiveId == currentObjective.ID);
         }
 

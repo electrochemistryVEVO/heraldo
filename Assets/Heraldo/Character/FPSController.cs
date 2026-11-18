@@ -7,11 +7,13 @@ using Heraldo.Global;
 using Heraldo.Global.Enums;
 using Heraldo.Global.Structs;
 using Heraldo.UI;
+using Heraldo.UI.Components;
 using Heraldo.Weapon;
 using Heraldo.Weapon.Holster;
 using LitMotion;
 using LitMotion.Extensions;
 using StarterAssets;
+using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Playables;
@@ -76,11 +78,15 @@ namespace Heraldo.Character
         private float _ogWalkSpeed;
         private float _ogSprintSpeed;
         private float _ogRotationSpeed;
+ 
+        public bool Paused = false;
 
         private float SpreadMultiplier()
         {
             Vector3 velocity = (transform.position - _prevPos) / Time.deltaTime;
-            return velocity.magnitude / _ogSprintSpeed;
+            var result = velocity.magnitude / (_controller.SprintSpeed + 0.1f); 
+            //Debug.Log($"[SPREAD-MULTIPLIER] {result}");
+            return velocity.magnitude / (_controller.SprintSpeed+0.1f);
         }
 
         private void Awake()
@@ -110,7 +116,7 @@ namespace Heraldo.Character
 
         private void Start()
         {
-            InitialSaveData();
+            //InitialSaveData();
             
             Cursor.visible = false;
             Cursor.lockState = CursorLockMode.Locked;
@@ -121,11 +127,20 @@ namespace Heraldo.Character
 
         public void OnTakeDamage(DamageInfo info)
         {
+            int prevhealth = _health;
             _health = Math.Clamp(_health - info.damage, 0, MaxHealth);
             _uiCanvas.HealthText(_health,MaxHealth);
             if (info.damage > 0)
             {
                 _uiCanvas.TakeDamage(info.damage,MaxHealth);
+            }
+            else if (info.damage < 0)
+            {
+                if (prevhealth == _health)
+                {
+                    _uiCanvas.FeedbackText(FeedbackType.CAP_REACHED,"Salud llena");
+                }
+                else _uiCanvas.FeedbackText(FeedbackType.HEALTH_GAINED,$"+{_health-prevhealth} Salud");
             }
             if (_health <= 0) Die();
         }
@@ -142,17 +157,29 @@ namespace Heraldo.Character
             }
         }
         
-        public void TriggerPlayerInput(bool value)
-        {
-            _playerInputEnabled = value;
-        }
-        
         private void Update()
         {
             //Ajustar brazotes fps
             //FpsArms.position = _controller.CinemachineCameraTarget.transform.position - _deltaPosFpsArms;
             //FpsArms.rotation = _controller.CinemachineCameraTarget.transform.rotation;
-            
+            //Detectar input de continuar
+            if (_inputs.start)
+            {
+                Debug.Log("[CONTROLS] Start button pressed");
+                _inputs.start = false;
+                _uiCanvas.ShowHideTutorial(true);
+                _cutsceneManager.PressStart();
+                if (Paused)
+                {
+                    Paused = false;
+                    return;
+                    //ToggleInputs(true);
+                }
+            }
+            if (Paused)
+            {
+                return;
+            }
             //Ajustar crosshair
             float spreadMultiplier = SpreadMultiplier();
             _uiCanvas.SetCrosshairSpread(spreadMultiplier);
@@ -184,11 +211,12 @@ namespace Heraldo.Character
             if (_inputs.shoot)
             {
                 _inputs.shoot = false;
+                Debug.Log($"[PLAYER-SHOOT] Fired. _currentWeapon is {(_currentWeapon==null ? "null" : "not null")}");
                 if (_currentWeapon !=null)
                 {
                     bool fired = _currentWeapon.Fire(_camera.position,_camera.TransformDirection(Vector3.forward),spreadMultiplier);
                     if (fired)
-                    {
+                    { 
                         TimelineID id = _currentWeapon.ShootTimelineId();
                         if (id != TimelineID.CANT_SHOOT)
                         {
@@ -200,6 +228,9 @@ namespace Heraldo.Character
                 }
                 //Debug.Log("Shot!");
             }
+            
+            //Actualizar compas
+            _uiCanvas.UpdateCompass(transform.position,transform.rotation);
         }
         //Antes de recoger, por motivos de UI, identificar el arma que esta mas cerca
         private void CalculateNearestInteractable()
@@ -250,18 +281,25 @@ namespace Heraldo.Character
         //Recoger armas
         public int PickupWeapon(int ammoCount,int weaponIndex)
         {
+            int prevAmmoCount = _arsenal.GetAmmoCounts()[weaponIndex];
             int result = _arsenal.PickupWeapon(ammoCount,weaponIndex);
-            _uiCanvas.AmmoText(_currentWeapon.AmmoCount);
+            if (result == 0)
+            {
+                _uiCanvas.FeedbackText(FeedbackType.CAP_REACHED,"Munición llena");
+            }
+            else _uiCanvas.FeedbackText(FeedbackType.AMMO_GAINED,$"+{result} Munición");
+            if(_currentWeapon is not null)_uiCanvas.AmmoText(_currentWeapon.AmmoCount);
             return result;
         }
 
         public void ToggleInputs(bool enable = false)
         {
+            _inputs.toggleLock = enable;
             _inputs.ModifyInputs(new string[]
             {
                 "crouch","shoot","holster","switch_weapon",
                 "pickup"
-            },enable);
+            },enable); 
             _controller.MoveSpeed = enable ? _ogWalkSpeed : 0;
             _controller.SprintSpeed = enable ? _ogSprintSpeed : 0;
             _controller.RotationSpeed = enable ? _ogRotationSpeed : 0;
@@ -353,13 +391,35 @@ namespace Heraldo.Character
             return new GameSaveData(nextScene, _health, _arsenal.GetAmmoCounts()[0]);
         }
 
-        private void InitialSaveData()
+        public void InitialSaveData()
         {
             if (!JsonParser.SaveFileExists())
                 JsonParser.WriteSaveData(new GameSaveData("Scenes/MainScene", 
                     MaxHealth, 
                     _arsenal.GetAmmoCounts()[0],
-                    "04:50"));
+                    "04:50")).Wait();
+        }
+
+        public void HolsterWeapon()
+        {
+            _inputs.holster = true;
+        }
+
+        public void Warp(Vector3 pos, Quaternion dir)
+        {
+            var previousPosition = transform.position;
+            var cameraTarget = _controller.CinemachineCameraTarget.transform;
+            var previousTargetPosition = cameraTarget.position;
+            var controllerWasEnabled = characterController.enabled;
+            characterController.enabled = false;
+            transform.SetPositionAndRotation(pos, dir);
+            characterController.enabled = controllerWasEnabled;
+            Physics.SyncTransforms();
+            _prevPos = transform.position;
+
+            CinemachineCore.OnTargetObjectWarped(transform, transform.position - previousPosition);
+            if (cameraTarget != transform)
+                CinemachineCore.OnTargetObjectWarped(cameraTarget, cameraTarget.position - previousTargetPosition);
         }
         
         //Load data

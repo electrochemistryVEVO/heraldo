@@ -14,7 +14,7 @@ namespace Heraldo.UI.Components
         public Vector3 initialWpnOffset;
         private Vector3 _initialEulerAngles;
 
-        private void Start()
+        private void Awake()
         {
             _initialEulerAngles = FallingWeapon.eulerAngles;
         }

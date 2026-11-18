@@ -13,6 +13,6 @@ namespace Heraldo.Global.Structs
         public string Title;
         public Vector3 Position;
         public bool Completed;
-        public Interactable interactable;
+        public bool HasToInteract;
     }
 }

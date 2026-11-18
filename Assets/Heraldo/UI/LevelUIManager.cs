@@ -7,8 +7,6 @@ using Heraldo.Global;
 using Heraldo.Global.Structs;
 using Heraldo.UI.Components;
 using JetBrains.Annotations;
-using LitMotion;
-using LitMotion.Extensions;
 using NUnit.Framework.Constraints;
 using TMPro; 
 using UnityEngine;
@@ -22,9 +20,12 @@ namespace Heraldo.UI
         private static readonly int Distance = Shader.PropertyToID("_Distance");
         public Image crosshair;
         public TMP_Text crosshairText;
+        public FeedbackUI feedback;
         public GameObject interactPopup;
+        public GameObject tutorialScreen;
         private TMP_Text _interactText;
         public ObjectivePopup objectivePopup;
+        public CompassUI compass;
         public TMP_Text flavorText;
         public TMP_Text cutsceneActorNameText;
         public TMP_Text cutsceneText;
@@ -86,6 +87,12 @@ namespace Heraldo.UI
             _interactText = interactPopup.transform.GetChild(1).GetComponent<TMP_Text>();
         }
 
+        public void ShowHideTutorial(bool hide = false)
+        {
+            Time.timeScale = hide ? 1f : 0f;
+            tutorialScreen.SetActive(!hide);
+        }
+
         private void Update()
         {
             if (!showFlavorText)
@@ -107,7 +114,7 @@ namespace Heraldo.UI
             dayTimeText.gameObject.SetActive(!on);
             dayTimeClock.gameObject.SetActive(!on);
             crosshair.gameObject.SetActive(!on);
-            
+            compass.Active(!on);
         }
  
         public void FlavorText(string text)
@@ -120,7 +127,7 @@ namespace Heraldo.UI
                 flavorText.color = new Color(color.r, color.g, color.b,1);
                 Thread t1 = new Thread(() =>
                 {
-                    Thread.Sleep(2000);
+                    Thread.Sleep(6000);
                     showFlavorText = false;
                 });
                 t1.Start();
@@ -130,6 +137,21 @@ namespace Heraldo.UI
         public void WeaponDescriptionText(string desc)
         {
             wpnDescriptionText.text = desc;
+        }
+
+        public void UpdateCompass(Vector3 position,Quaternion rotation)
+        {
+            compass.UpdateByPlayerTransform(position, rotation);
+        }
+
+        public void SetMarkerPosition(MarkerType type, Vector3 position)
+        {
+            compass.SetMarkerPosition(type,position);
+        }
+
+        public void FeedbackText(FeedbackType type,string text)
+        {
+            feedback.SpawnFeedbackText(type, text);
         }
 
         public void CutsceneText(string subjectName="",string text="")
@@ -204,32 +226,31 @@ namespace Heraldo.UI
         
 
 
-        public async Task FadeToBlack(float seconds)
+        public Task FadeToBlack(float seconds) => FadeBlackPanel(0f, 1f, seconds);
+
+        public Task FadeFromBlack(float seconds) => FadeBlackPanel(1f, 0f, seconds);
+
+        private async Task FadeBlackPanel(float from, float to, float seconds)
         {
-            await LMotion.Create(0, 1f, seconds)
-                .Bind(alpha =>
-                {
-                    blackFadePanel.color = new Color(blackFadePanel.color.r,
-                        blackFadePanel.color.g,
-                        blackFadePanel.color.b,
-                        alpha);
-                })
-                .AddTo(blackFadePanel.gameObject)
-                .ToAwaitable();
-        }
-        
-        public async Task FadeFromBlack(float seconds)
-        {
-            await LMotion.Create(1f, 0, seconds)
-                .Bind(alpha =>
-                {
-                    blackFadePanel.color = new Color(blackFadePanel.color.r,
-                        blackFadePanel.color.g,
-                        blackFadePanel.color.b,
-                        alpha);
-                })
-                .AddTo(blackFadePanel.gameObject)
-                .ToAwaitable();
+            await Awaitable.MainThreadAsync();
+            var panel = blackFadePanel;
+            var cancellationToken = destroyCancellationToken;
+            var color = panel.color;
+            var start = Time.unscaledTimeAsDouble;
+            color.a = from;
+            panel.color = color;
+
+            double elapsed = 0;
+            while (elapsed < seconds)
+            {
+                await Awaitable.NextFrameAsync(cancellationToken);
+                elapsed = Time.unscaledTimeAsDouble - start;
+                color.a = Mathf.Lerp(from, to, (float)(elapsed / seconds));
+                panel.color = color;
+            }
+
+            color.a = to;
+            panel.color = color;
         }
 
         public Task FailLevel()
@@ -244,15 +265,25 @@ namespace Heraldo.UI
         public Task NextLevel(GameSaveData saveData)
         {
             saveData.SetTimeString(dayTimeText.text.Split(' ')[0]);
-            JsonParser.WriteSaveData(saveData);
-            _losingScene = saveData.lastScene;
+            JsonParser.WriteSaveData(saveData).Wait();
+            _losingScene = saveData.lastScene == "Scenes/MainMenu"
+            ? "Scenes/MainMenu"
+            :"Scenes/MissionDebriefScene";
             return FailLevel();
+        }
+
+        public void SkipToLevel(GameSaveData saveData)
+        {
+            saveData.SetTimeString(dayTimeText.text.Split(' ')[0]);
+            JsonParser.WriteSaveData(saveData).Wait();
+            _losingScene = saveData.lastScene;
+            SceneManager.LoadScene(_losingScene);
         }
 
         public Task EndGame()
         {
             JsonParser.DeleteSaveData();
-            _losingScene = "Scenes/ClosingScreen";
+            _losingScene = "Scenes/MainMenu";
             return FailLevel();
         }
 

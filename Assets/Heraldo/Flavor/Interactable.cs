@@ -11,6 +11,7 @@ namespace Heraldo.Flavor
     {
         public ObjectiveID ObjetivoRelacionado = ObjectiveID.NO_OBJECTIVE;
         public int WeaponPrerequisite = -1;
+        public ObjectiveID ObjectivePrerequisite = ObjectiveID.NO_OBJECTIVE;
         protected ObjectiveManager _objectiveManager;
         protected CutsceneManager _cutsceneManager;
 
@@ -39,7 +40,9 @@ namespace Heraldo.Flavor
 
         public void Pickup()
         {
-            _objectiveManager.CompleteObjective();
+            if(ObjectivePrerequisite == ObjectiveID.NO_OBJECTIVE 
+               || _objectiveManager.currentObjective.ID == ObjectivePrerequisite)
+                _objectiveManager.CompleteObjective();
         }
         //Determine if the object will delete when picked up 
         public virtual void Interact(FPSController controller) {}

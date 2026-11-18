@@ -13,7 +13,7 @@ namespace Heraldo.UI
         public Button RetryButton;
         public GameObject LoadingScreen;
         public GameObject LandingScreen;
-        private string _scnToLoad;
+        protected string _scnToLoad;
         
         void LoadLevel()
         {
@@ -25,12 +25,13 @@ namespace Heraldo.UI
 
         void Quit()
         {
+            Debug.Log("Quit button pressed");
             LoadingScreen.SetActive(true);
             LandingScreen.SetActive(false);
             SceneManager.LoadSceneAsync("Scenes/MainMenu");
         }
 
-        private void Awake()
+        public void Awake()
         {
             if (JsonParser.SaveFileExists())
             {
@@ -41,11 +42,12 @@ namespace Heraldo.UI
                 _scnToLoad = scn;
             }
             else _scnToLoad = "Scenes/MainScene";
+            Debug.Log("Retry menu awakened");
             QuitButton.onClick.AddListener(Quit);
             RetryButton.onClick.AddListener(LoadLevel);
         }
 
-        private void Start()
+        public virtual void Start()
         {
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;

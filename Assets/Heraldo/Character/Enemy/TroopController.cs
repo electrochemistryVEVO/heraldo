@@ -7,6 +7,9 @@ using Heraldo.Character.Pathfinding;
 using Heraldo.Flavor;
 using Heraldo.Global.Enums;
 using Heraldo.Global.Structs;
+using Heraldo.Level;
+using Heraldo.UI;
+using Heraldo.UI.Components;
 using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.AI;
@@ -49,11 +52,14 @@ namespace Heraldo.Character.Enemy
         public List<Transform> TrooperRespawnSpots2;
         
         public List<Transform> TrooperRespawnSpots3;
+        public List<HealthBox> healthBoxes;
+        public List<AmmoBox> ammoBoxes;
         public Transform AllyRespawnSpots;
         public Transform EnemyRespawnSpot;
         private Queue<Action> respawnTaskQueue = new Queue<Action>();
         private float _respawnCount;
-
+        private LevelUIManager _uiManager;
+        
         // Only on the first position assignment do we chain the delegate
         private bool _firstAssignment = true;
         
@@ -81,6 +87,7 @@ namespace Heraldo.Character.Enemy
             _barricadeList = barricades.GetComponentsInChildren<CoverBarricade>();
             _occupiedSpots = new();
             _respawnCount = TrooperRespawnTime;
+            _uiManager = GameObject.FindWithTag("UI Canvas").GetComponent<LevelUIManager>();
             
             //Assign names of ally objects
             if(_allyTroopers.Count>0)
@@ -90,8 +97,19 @@ namespace Heraldo.Character.Enemy
             //else AssignPositions();
         }
 
+        void UpdateBoxMarkers()
+        {
+            var hbox = healthBoxes.Find(e => e.Battle_Phase == Battle_Phase);
+            var abox = ammoBoxes.Find(e => e.Battle_Phase == Battle_Phase);
+            if(abox is not null)_uiManager.SetMarkerPosition(MarkerType.AMMO,abox.transform.position);
+            if(hbox is not null)_uiManager.SetMarkerPosition(MarkerType.HEALTH,hbox.transform.position);
+        }
+
         private void Start()
         {
+            //Initialize health and ammo box markers
+            UpdateBoxMarkers();
+            
             //Assign positions
             if (Battle_Phase == BattlePhase.ROUTINES) AssignClosestRoutines();
             else AssignPositions();
@@ -311,6 +329,7 @@ namespace Heraldo.Character.Enemy
         public void SwitchPhase()
         {
             Battle_Phase++;
+            UpdateBoxMarkers();
             //Reassign positions
             AssignPositions();
         }

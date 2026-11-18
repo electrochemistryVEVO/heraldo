@@ -12334,9 +12334,17 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 908567823}
     - target: {fileID: 7453449956124859054, guid: 4a6a702dd51ddae339fb454a9db815fe, type: 3}
+      propertyPath: CutsceneMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7453449956124859054, guid: 4a6a702dd51ddae339fb454a9db815fe, type: 3}
       propertyPath: currentCamera
       value: 
       objectReference: {fileID: 1131846361}
+    - target: {fileID: 7453449956124859054, guid: 4a6a702dd51ddae339fb454a9db815fe, type: 3}
+      propertyPath: currentCutscene
+      value: 
+      objectReference: {fileID: 11400000, guid: d718689b7b451e318b8568483159ce80, type: 2}
     - target: {fileID: 7453449956124859054, guid: 4a6a702dd51ddae339fb454a9db815fe, type: 3}
       propertyPath: objectiveManager
       value: 

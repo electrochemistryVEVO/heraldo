@@ -67,7 +67,8 @@ namespace Heraldo.Global
                 {
                     using (StreamWriter writer = new(stream))
                     {
-                        await writer.WriteAsync(fileData);
+                        // Los cambios de nivel esperan esta escritura desde el hilo principal.
+                        await writer.WriteAsync(fileData).ConfigureAwait(false);
                     }
                 }
             }

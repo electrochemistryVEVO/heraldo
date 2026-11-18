@@ -1256,6 +1256,7 @@ MonoBehaviour:
   Weapon: {fileID: 8025182310762236735}
   FpsArms: {fileID: 5113906738843833901}
   MaxHealth: 100
+  Paused: 0
 --- !u!114 &6695860163575345967
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1270,9 +1271,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Heraldo.Character.Inputs
   crouch: 0
   shoot: 0
-  holster: 1
+  holster: 0
+  start: 0
   pickup: 0
   selectedWeapon: 0
+  toggleLock: 1
 --- !u!4 &3023563333338495872 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8997996947095583982, guid: c5efc39a8aaf6e64ea40e9ad573e9b47, type: 3}

@@ -11,6 +11,8 @@ namespace Heraldo.UI
 
         private void Start()
         {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
             button.onClick.AddListener(() => { SceneManager.LoadScene("Scenes/MainMenu"); });
         }
     }

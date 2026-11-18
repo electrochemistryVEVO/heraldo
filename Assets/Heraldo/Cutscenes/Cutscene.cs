@@ -27,7 +27,12 @@ namespace Heraldo.Cutscenes
         NEXT_LEVEL,
         WAKE_ENEMIES,
         CHARACTER_EQUIP_WEAPON,
-        SPAWN_OBJECT
+        SPAWN_OBJECT,
+        SKIP_TO_LEVEL,
+        PLAYER_HOLSTER_WEAPON,
+        WAIT_FOR_INPUT,
+        ACTIVATE_OBJECT,
+        END_GAME
     }
     [System.Serializable]
     public struct CutsceneAction

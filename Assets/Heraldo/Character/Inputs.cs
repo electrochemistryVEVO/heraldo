@@ -14,6 +14,7 @@ namespace Heraldo.Character
         public bool crouch;
         public bool shoot;
         public bool holster;
+        public bool start;
         public bool pickup;
         public int selectedWeapon;
         private StarterAssetsInputs _otherInputs;
@@ -29,13 +30,17 @@ namespace Heraldo.Character
             {"shoot",true},
             {"holster",true},
             {"pickup",true},
-            {"select_weapon",true}
+            {"select_weapon",true},
+            {"continue",true}
         };
 
+        public bool toggleLock = true;
+
         public void ModifyInputs(string[] inputs,bool value)
-        {
+        { 
             foreach (var key in inputs)
             {
+                Debug.Log($"[INPUTS] ${(value ? "Enabled" : "Disabled")}: ${key}");
                 enabledInputMap[key] = value;
             }
         }
@@ -44,28 +49,28 @@ namespace Heraldo.Character
         {
             bool enabled;
             enabledInputMap.TryGetValue("crouch", out enabled);
-            if(enabled && !_otherInputs.sprint)CrouchInput(value.isPressed);
+            if(toggleLock && enabled && !_otherInputs.sprint)CrouchInput(value.isPressed);
         }
 
         public void OnShoot(InputValue value)
         {
-            bool enabled;
-            enabledInputMap.TryGetValue("shoot", out enabled);
-            if(enabled)ShootInput(value.isPressed);
+            Debug.Log("[INPUTS] Shoot enabled? = "+enabledInputMap["shoot"]);
+            Debug.Log("[INPUTS] Toggle lock? = "+toggleLock);
+            if(toggleLock && enabledInputMap["shoot"])ShootInput(value.isPressed);
         }
 
         public void OnDrawHolster(InputValue value)
         {
             bool enabled;
             enabledInputMap.TryGetValue("holster", out enabled);
-            if(enabled)SwitchHolster();
+            if(toggleLock && enabled)SwitchHolster();
         }
 
         public void OnWpnSelect1(InputValue value)
         {
             bool enabled;
             enabledInputMap.TryGetValue("select_weapon", out enabled);
-            if (enabled)
+            if (toggleLock && enabled)
             {
                 SelectWeapon(0);
                 holster = false;
@@ -75,7 +80,7 @@ namespace Heraldo.Character
         {
             bool enabled;
             enabledInputMap.TryGetValue("select_weapon", out enabled);
-            if (enabled)
+            if (toggleLock && enabled)
             {
                 SelectWeapon(1);
                 holster = false;
@@ -84,11 +89,21 @@ namespace Heraldo.Character
 
         public void OnInteract(InputValue value)
         {
-            if (!value.isPressed && enabledInputMap["pickup"])
+            if (toggleLock && !value.isPressed && enabledInputMap["pickup"])
             {
                 PickupInput(true);
             }
         }
+
+        public void OnContinue(InputValue value)
+        {
+            Debug.Log("[INPUTS] Start");
+            if (value.isPressed && enabledInputMap["continue"])
+            {
+                ContinueInput(true);
+            }
+        }
+        
 #endif
         public void CrouchInput(bool newCrouchState)
         {
@@ -97,7 +112,8 @@ namespace Heraldo.Character
 
         public void ShootInput(bool doShoot)
         {
-            shoot = doShoot;
+            Debug.Log("[INPUTS] Shoot enabled? = "+enabledInputMap["shoot"]);
+            if(enabledInputMap["shoot"])shoot = doShoot;
         }
 
         public void SwitchHolster()
@@ -114,6 +130,11 @@ namespace Heraldo.Character
         public void PickupInput(bool newPickupState)
         {
             pickup = newPickupState;
+        }
+
+        public void ContinueInput(bool newStart)
+        {
+            start = newStart;
         }
     }
 }

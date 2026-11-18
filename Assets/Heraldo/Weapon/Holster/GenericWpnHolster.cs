@@ -113,12 +113,12 @@ namespace Heraldo.Weapon.Holster
             _weapons[wpnIndex].AmmoCount = Math.Min(_weapons[wpnIndex].AmmoCount + ammoCount, _weapons[wpnIndex].MaxAmmo);
             realAmmoCount = _weapons[wpnIndex].AmmoCount - realAmmoCount;
             Debug.Log("Picked up ammo: " + ammoCount);
-            if (_last_wpn_index != wpnIndex)
-            {
-                _last_wpn_index = wpnIndex;
-                Hold();
-                Draw();
-            } 
+            // if (_last_wpn_index != wpnIndex)
+            // {
+            //     _last_wpn_index = wpnIndex;
+            //     Hold();
+            //     Draw();
+            // } 
             return realAmmoCount;
         }
 

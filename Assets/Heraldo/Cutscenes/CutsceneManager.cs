@@ -18,6 +18,8 @@ namespace Heraldo.Cutscenes
 {
     public class CutsceneManager : MonoBehaviour
     {
+        private const float NavMeshSearchDistance = 2f;
+
         public Cutscene currentCutscene;
         
         //Estos dos tienen procesos automaticos que deben de detenerse en las cutscenes
@@ -39,6 +41,8 @@ namespace Heraldo.Cutscenes
         private FPSController _player;
         private Transform[] _spotList;
 
+        private TaskCompletionSource<bool> _pressStart = new();
+
         public bool CutsceneMode = false;
 
         //Events
@@ -46,6 +50,11 @@ namespace Heraldo.Cutscenes
 
         public CutsceneEnded endCutscene;
 
+
+        public void PressStart()
+        {
+            _pressStart.TrySetResult(true);
+        }
         private void Awake()
         {
             _currentCameraTransposer = (CinemachineThirdPersonFollow)currentCamera.GetCinemachineComponent(CinemachineCore.Stage.Body);
@@ -57,6 +66,7 @@ namespace Heraldo.Cutscenes
             if (CutsceneMode)
             {
                 troop.enabled = false;
+                //player.Paused = true;
                 //dayNight.enabled = false;
                 objectiveManager.enabled = false;
                 //_uiCanvas.gameObject.SetActive(false);
@@ -64,13 +74,13 @@ namespace Heraldo.Cutscenes
         }
         
 
-        private void Start()
+        private async void Start()
         {
             if (CutsceneMode)
             {
                 _uiCanvas.CutsceneMode();
                 player.ToggleInputs();
-                StartCutscene().RunSynchronously();
+                await StartCutscene();
             }
         }
 
@@ -79,14 +89,29 @@ namespace Heraldo.Cutscenes
             switch (action.type)
             {
                 case CutsceneActionType.ENEMY_SPAWN:
-                    Awaitable.MainThreadAsync();
-                    GameObject nme = Instantiate(action.what);
-                    var _where = _spotList[action.where].position;
-                    Debug.Log("[ENEMY-SPAWN] Where = "+_where);
-                    if (action.relativeToPlayer) _where = player.transform.TransformPoint(_where);
-                    nme.GetComponent<NavMeshAgent>().Warp(_where);
-                    actorList.Add(nme.GetComponent<EnemyController>());
+                case CutsceneActionType.ALLY_SPAWN:
+                {
+                    var spot = _spotList[action.where];
+                    var position = spot.position;
+                    if (action.relativeToPlayer) position = player.transform.TransformPoint(position);
+                    if (!action.what || !action.what.TryGetComponent<NavMeshAgent>(out var prefabAgent) ||
+                        !action.what.TryGetComponent<EnemyController>(out _))
+                        throw new InvalidOperationException("El prefab requiere NavMeshAgent y EnemyController en su raíz.");
+
+                    var destination = FindNavMeshPosition(prefabAgent, spot, position);
+                    var instance = Instantiate(action.what, destination + Vector3.up * prefabAgent.baseOffset,
+                        action.what.transform.rotation);
+                    var agent = instance.GetComponent<NavMeshAgent>();
+                    if (!agent.isOnNavMesh)
+                    {
+                        Destroy(instance);
+                        throw new InvalidOperationException(
+                            $"'{action.what.name}' no se vinculó al NavMesh en '{spot.name}' ({destination}).");
+                    }
+
+                    actorList.Add(instance.GetComponent<EnemyController>());
                     return Task.CompletedTask;
+                }
                 case CutsceneActionType.CHARACTER_MOVE:
                 {
                     EnemyController who = actorList[action.who];
@@ -100,14 +125,12 @@ namespace Heraldo.Cutscenes
                 }
                 case CutsceneActionType.ADVANCE_SPEECH:
                 {
-                    Awaitable.MainThreadAsync();
                     var part = currentCutscene.parts[_speechIndex++]; 
                     _uiCanvas.CutsceneText(part.actor,part.text); 
                     return Task.Delay((int)MathF.Round(action.howMuch*1000));
                 }
                 case CutsceneActionType.PLAYER_ROTATE_TOWARDS:
                 {
-                    Awaitable.MainThreadAsync();
                     var where = _spotList[action.where].position;
                     if (action.relativeToPlayer) where = player.transform.TransformPoint(where);
                     return player.RotateTowards(where,action.howMuch);
@@ -129,15 +152,20 @@ namespace Heraldo.Cutscenes
                 case CutsceneActionType.PLAYER_REPOSITION:
                 {
                     var spot = _spotList[action.where];
-                    player.transform.position = spot.position;
-                    player.transform.rotation = spot.rotation;
+                    player.Warp(spot.position,spot.rotation);
                     return Task.CompletedTask;
                 }
                 case CutsceneActionType.CHARACTER_REPOSITION:
                 {
                     var who = actorList[action.who];
-                    var where = _spotList[action.where].position;
-                    who.GetComponent<NavMeshAgent>().Warp(where);
+                    var spot = _spotList[action.where];
+                    var agent = who.GetComponent<NavMeshAgent>();
+                    var position = spot.position;
+                    if (action.relativeToPlayer) position = player.transform.TransformPoint(position);
+                    var destination = FindNavMeshPosition(agent, spot, position);
+                    if (!agent.isActiveAndEnabled || !agent.Warp(destination))
+                        throw new InvalidOperationException(
+                            $"No se pudo trasladar a '{who.name}' a '{spot.name}' ({destination}).");
                     return Task.CompletedTask;
                 }
                 case CutsceneActionType.DESTROY_OBJECT:
@@ -150,6 +178,11 @@ namespace Heraldo.Cutscenes
                 case CutsceneActionType.NEXT_LEVEL:
                 {
                     return _uiCanvas.NextLevel(player.returnSaveData(action.text));
+                }
+                case CutsceneActionType.SKIP_TO_LEVEL:
+                {
+                    _uiCanvas.SkipToLevel(player.returnSaveData(action.text));
+                    return Task.CompletedTask;
                 }
                 case CutsceneActionType.WAKE_ENEMIES:
                 {
@@ -164,32 +197,77 @@ namespace Heraldo.Cutscenes
                 }
                 case CutsceneActionType.SPAWN_OBJECT:
                 {
-                    var what = Instantiate(action.what);
-                    things.Add(Instantiate(what));
                     var where = _spotList[action.where];
-                    what.transform.position = where.position;
+                    things.Add(Instantiate(action.what, where.position, action.what.transform.rotation));
                     return Task.CompletedTask;
                 }
+                case CutsceneActionType.PLAYER_HOLSTER_WEAPON:
+                {
+                    player.HolsterWeapon();
+                    return Task.CompletedTask;
+                }
+                case CutsceneActionType.WAIT_FOR_INPUT:
+                {
+                    _pressStart = new();
+                    return _pressStart.Task;
+                }
+                case CutsceneActionType.ACTIVATE_OBJECT:
+                {
+                    var thing = things[action.whatIndex];
+                    thing.SetActive(true);
+                    return Task.CompletedTask;
+                }
+                case CutsceneActionType.END_GAME:
+                {
+                    return _uiCanvas.EndGame();
+                }
             }
-            return null;
+            throw new NotSupportedException($"Acción de cutscene sin implementar: {action.type}");
+        }
+
+        private static Vector3 FindNavMeshPosition(NavMeshAgent agent, Transform spot, Vector3 position)
+        {
+            var filter = new NavMeshQueryFilter { agentTypeID = agent.agentTypeID, areaMask = agent.areaMask };
+            if (NavMesh.SamplePosition(position, out var hit, NavMeshSearchDistance, filter))
+                return hit.position;
+
+            throw new InvalidOperationException(
+                $"No hay NavMesh compatible a {NavMeshSearchDistance} m de '{spot.name}' ({position}) " +
+                $"para '{agent.name}' (tipo {agent.agentTypeID}, máscara {agent.areaMask}).");
+        }
+
+        private Task StartAction(CutsceneAction action)
+        {
+            try
+            {
+                return ProcessCutsceneAction(action);
+            }
+            catch (Exception e)
+            {
+                throw new InvalidOperationException(
+                    $"Acción {action.type}, actor {action.who}, punto {action.where}, objeto {action.whatIndex}.", e);
+            }
         }
 
         public async Task StartCutscene()
         {
+            int? currentOrder = null;
             try
             {
+                await Awaitable.MainThreadAsync();
                 CutsceneMode = true; 
                 _speechIndex = 0;
-                int i = 0;
                 foreach (var actions in currentCutscene.actions
                              .GroupBy(val => val.order)
                              .OrderBy(val => val.Key))
                 {
-                    //CutscenePart part = currentCutscene.parts.Find(val => val.order == i); 
-                    //if(!part.HasValue) _uiCanvas.CutsceneText();
-                    //else _uiCanvas.CutsceneText(part.Value.subjectName,part.Value.text);
-                    await Task.WhenAll(actions.Select(ProcessCutsceneAction));
-                    i++;
+                    await Awaitable.MainThreadAsync();
+                    currentOrder = actions.Key;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    Debug.Log($"[Cutscene] {currentCutscene.name}, bloque {currentOrder}: " +
+                              string.Join(", ", actions.Select(action => action.type)), this);
+#endif
+                    await Task.WhenAll(actions.Select(StartAction));
                 }
                 await Awaitable.MainThreadAsync();
                 _uiCanvas.CutsceneText();
@@ -197,11 +275,18 @@ namespace Heraldo.Cutscenes
             }
             catch (Exception e)
             {
-                Debug.LogException(e);
+                await Awaitable.MainThreadAsync();
+                if (!this) return;
+
+                Debug.LogError($"[Cutscene] Escena {gameObject.scene.name}, cinemática {currentCutscene?.name}, " +
+                               $"bloque {currentOrder}: {e}", this);
+                await _uiCanvas.FadeFromBlack(0f);
+                _uiCanvas.CutsceneText();
+                FinishCutscene(completed: false);
             }
         }
 
-        private void FinishCutscene()
+        private void FinishCutscene(bool completed = true)
         {
             CutsceneMode = false;
             troop.enabled = true;
@@ -209,6 +294,12 @@ namespace Heraldo.Cutscenes
             objectiveManager.enabled = true;
             _uiCanvas.CutsceneMode(false);
             player.ToggleInputs(true);
+            if (completed && currentCutscene.ID == CutsceneID.INITIAL_CUTSCENE)
+            {
+                player.InitialSaveData();
+                player.Paused = true;
+                _uiCanvas.ShowHideTutorial();
+            }
         }
 
         public void OnDrawGizmos()
